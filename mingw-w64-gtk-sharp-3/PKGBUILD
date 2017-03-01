@@ -1,0 +1,31 @@
+# Maintainer: Łukasz Fuszara <lukaszfuszara1990@gmail.com>
+
+_basename=gtk-sharp
+_realname=${_basename}-3
+pkgbase="mingw-w64-${_realname}"
+pkgname="${MINGW_PACKAGE_PREFIX}-${_realname}"
+pkgver=3.22.6
+pkgrel=1
+pkgdesc="C# bindings for GTK+ 3, built from sources."
+arch=('any')
+url="https://github.com/openmedicus/gtk-sharp"
+license=('GPL')
+depends=("${MINGW_PACKAGE_PREFIX}-gtk3")
+source=("https://github.com/openmedicus/gtk-sharp/archive/${_basename}-${pkgver}.tar.gz")
+sha256sums=('7d940ec659c80120353503ac0aa65512addc678396af595f99c80c9b2c87d164')
+
+build() {
+  local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
+
+  cd "${srcdir}/${_basename}-${_basename}-${pkgver}"
+  MSYSTEM=MINGW ./autogen.sh --prefix=${MINGW_PREFIX}
+  make
+}
+
+package() {
+  local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
+  MSYSTEM=MINGW
+
+  cd "${srcdir}/${_basename}-${_basename}-${pkgver}"
+  make DESTDIR="$pkgdir" install
+}
