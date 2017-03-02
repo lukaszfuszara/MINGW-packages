@@ -16,24 +16,25 @@ depends=("${MINGW_PACKAGE_PREFIX}-zlib"
          "${MINGW_PACKAGE_PREFIX}-gcc-libs" 
          "${MINGW_PACKAGE_PREFIX}-libiconv")
 source=(http://download.mono-project.com/sources/mono/${_realname}-${pkgver}.tar.bz2
-        https://raw.githubusercontent.com/lukaszfuszara/MINGW-packages/master/mingw-w64-mono/mono-4.8.0-ignore-reference-assemblies.patch)
+        https://raw.githubusercontent.com/lukaszfuszara/MINGW-packages/master/mingw-w64-mono/mono-4.8.0-ignore-reference-assemblies.patch
+        https://raw.githubusercontent.com/lukaszfuszara/MINGW-packages/master/mingw-w64-mono/mono-4.8.0-libgc-x86_64.patch)
 sha256sums=('7ba62e6f42559d58dc447a19fc1cb2a9c7977d6c6e21e1e335f73917dea120cb'
-            'f399cb3091e7dae00be5f39c785a03aa2294415975c3bd71c3e38b0228781b38')
+            'f399cb3091e7dae00be5f39c785a03aa2294415975c3bd71c3e38b0228781b38'
+            'f5c9585dca5b72b73886beea2ad3855d7c9d27f341c148c56754500e62141bdf')
 
 prepare() {
  local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
 
  cd "${srcdir}/${_realname}-${_pkgver}"
- 
+ cp ./mcs/build/platforms/linux.make ./mcs/build/platforms/win32.make
  patch -Np1 -i "${srcdir}/mono-4.8.0-ignore-reference-assemblies.patch"
+ patch -Np1 -i "${srcdir}/mono-4.8.0-libgc-x86_64.patch"
 }
 
 build() {
   local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
 
   cd "${srcdir}/${_realname}-${_pkgver}"
-  
-  cp ./mcs/build/platforms/linux.make ./mcs/build/platforms/win32.make
   
   # build mono
   MSYSTEM=MINGW ./configure \
@@ -42,6 +43,7 @@ build() {
                 --host=${MINGW_CHOST} \
                 --enable-parallel-mark \
                 --program-transform-name="" \
+                --with-sgen=no \
                 --with-gc=included \
                 --disable-rpath \
                 --with-moonlight=no
