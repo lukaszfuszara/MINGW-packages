@@ -1,6 +1,5 @@
-diff -ura mcs/class/reference-assemblies/Makefile mcs/class/reference-assemblies/Makefile
---- mcs/class/reference-assemblies/Makefile	2017-02-22 17:33:16.000000000 +0100
-+++ mcs/class/reference-assemblies/Makefile	2017-03-01 22:42:09.054437300 +0100
+--- a/mcs/class/reference-assemblies/Makefile	2017-02-22 17:33:16.000000000 +0100
++++ b/mcs/class/reference-assemblies/Makefile	2017-03-01 22:42:09.054437300 +0100
 @@ -7,23 +7,26 @@
  PROFILE_DIR=$(DESTDIR)$(mono_libdir)/mono
  
