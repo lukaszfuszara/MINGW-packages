@@ -18,11 +18,21 @@ depends=("${MINGW_PACKAGE_PREFIX}-zlib"
 source=(http://download.mono-project.com/sources/mono/${_realname}-${pkgver}.tar.bz2)
 sha256sums=('7ba62e6f42559d58dc447a19fc1cb2a9c7977d6c6e21e1e335f73917dea120cb')
 
+prepare() {
+ local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
+
+ cd "${srcdir}/${_realname}-${_pkgver}"
+ 
+ patch -Np1 -i "${srcdir}/mono-4.8.0-ignore-reference-assemblies.patch"
+}
+
 build() {
   local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
 
   cd "${srcdir}/${_realname}-${_pkgver}"
-
+  
+  cp ./mcs/build/platforms/linux.make ./mcs/build/platforms/win32.make
+  
   # build mono
   MSYSTEM=MINGW ./configure \
                 --prefix=${MINGW_PREFIX} \
@@ -30,14 +40,9 @@ build() {
                 --host=${MINGW_CHOST} \
                 --enable-parallel-mark \
                 --program-transform-name="" \
-                --disable-mcs-build \
-                --enable-nls=no \
-                --with-tls=no \
-                --with-gc=boehm
-  make
-
-  # build jay
-  cd "${srcdir}"/${_realname}-${_pkgver}/mcs/jay
+                --with-gc=included \
+				--disable-rpath \
+                --with-moonlight=no
   make
 }
 
@@ -47,13 +52,4 @@ package() {
   
   cd "${srcdir}"/${_realname}-${_pkgver}
   make DESTDIR="${pkgdir}" install
-
-  # install jay
-  pushd "${srcdir}"/${_realname}-${_pkgver}/mcs/jay
-  make DESTDIR="${pkgdir}" prefix=${MINGW_PREFIX} INSTALL=../../install-sh install
-  popd
-
-  #fix .pc file to be able to request mono on what it depends, fixes #go-oo build
-  sed -i -e "s:#Requires:Requires:" "${pkgdir}${MINGW_PREFIX}"/lib/pkgconfig/mono.pc
-  sed -i -e "s:/2.0/:/4.5/:g" "${pkgdir}${MINGW_PREFIX}"/lib/pkgconfig/mono-nunit.pc
 }
