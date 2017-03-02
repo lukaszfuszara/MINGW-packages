@@ -1,4 +1,4 @@
-diff -ura mono-4.8.0.orig/mcs/class/reference-assemblies/Makefile mono-4.8.0.new/mcs/class/reference-assemblies/Makefile
+diff -ura mcs/class/reference-assemblies/Makefile mcs/class/reference-assemblies/Makefile
 --- mcs/class/reference-assemblies/Makefile	2017-02-22 17:33:16.000000000 +0100
 +++ mcs/class/reference-assemblies/Makefile	2017-03-01 22:42:09.054437300 +0100
 @@ -7,23 +7,26 @@

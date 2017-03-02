@@ -18,7 +18,7 @@ depends=("${MINGW_PACKAGE_PREFIX}-zlib"
 source=(http://download.mono-project.com/sources/mono/${_realname}-${pkgver}.tar.bz2
         https://raw.githubusercontent.com/lukaszfuszara/MINGW-packages/master/mingw-w64-mono/mono-4.8.0-ignore-reference-assemblies.patch)
 sha256sums=('7ba62e6f42559d58dc447a19fc1cb2a9c7977d6c6e21e1e335f73917dea120cb'
-            '77dd29942de5e28d195fffbe404cdfce632dc825af00c4aeca452fceb1869a3f')
+            '75792a9412ab19483fd03d210737fa1b56b5450628a047e4a1291e797e0c8ca9')
 
 prepare() {
  local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
