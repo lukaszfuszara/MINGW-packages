@@ -15,8 +15,10 @@ depends=("${MINGW_PACKAGE_PREFIX}-zlib"
          "${MINGW_PACKAGE_PREFIX}-ca-certificates" 
          "${MINGW_PACKAGE_PREFIX}-gcc-libs" 
          "${MINGW_PACKAGE_PREFIX}-libiconv")
-source=(http://download.mono-project.com/sources/mono/${_realname}-${pkgver}.tar.bz2)
-sha256sums=('7ba62e6f42559d58dc447a19fc1cb2a9c7977d6c6e21e1e335f73917dea120cb')
+source=(http://download.mono-project.com/sources/mono/${_realname}-${pkgver}.tar.bz2
+        https://raw.githubusercontent.com/lukaszfuszara/MINGW-packages/master/mingw-w64-mono/mono-4.8.0-ignore-reference-assemblies.patch)
+sha256sums=('7ba62e6f42559d58dc447a19fc1cb2a9c7977d6c6e21e1e335f73917dea120cb'
+            '77dd29942de5e28d195fffbe404cdfce632dc825af00c4aeca452fceb1869a3f')
 
 prepare() {
  local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
@@ -41,7 +43,7 @@ build() {
                 --enable-parallel-mark \
                 --program-transform-name="" \
                 --with-gc=included \
-				--disable-rpath \
+                --disable-rpath \
                 --with-moonlight=no
   make
 }
