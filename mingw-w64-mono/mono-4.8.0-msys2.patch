@@ -1,0 +1,2805 @@
+diff -ura mono-4.8.0.orig/mcs/build/config-default.make mono-4.8.0.new/mcs/build/config-default.make
+--- mono-4.8.0.orig/mcs/build/config-default.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/config-default.make	2017-03-03 16:25:13.424567200 +0100
+@@ -13,7 +13,7 @@
+ TEST_HARNESS = $(topdir)/class/lib/$(PROFILE)/$(PARENT_PROFILE)nunit-console.exe
+ MCS_FLAGS = 
+ MBAS_FLAGS = $(PLATFORM_DEBUG_FLAGS)
+-LIBRARY_FLAGS = /noconfig
++LIBRARY_FLAGS = -noconfig
+ ifndef CFLAGS
+ CFLAGS = -g -O2
+ endif
+@@ -36,5 +36,5 @@
+ # weird platform.
+ 
+ # CC = cc
+-# SHELL = /bin/sh
++# SHELL = /sbin/sh
+ # MAKE = gmake 
+diff -ura mono-4.8.0.orig/mcs/build/library.make mono-4.8.0.new/mcs/build/library.make
+--- mono-4.8.0.orig/mcs/build/library.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/library.make	2017-03-03 16:25:52.835042300 +0100
+@@ -187,7 +187,7 @@
+ # install the DLLs.
+ 
+ ifndef RUNTIME_HAS_CONSISTENT_GACDIR
+-gacdir_flag = /gacdir $(GACDIR)
++gacdir_flag = -gacdir $(GACDIR)
+ endif
+ 
+ ifndef LIBRARY_PACKAGE
+@@ -199,14 +199,14 @@
+ endif
+ 
+ ifneq (none, $(LIBRARY_PACKAGE))
+-package_flag = /package $(LIBRARY_PACKAGE)
++package_flag = -package $(LIBRARY_PACKAGE)
+ endif
+ 
+ install-local: $(gacutil)
+-	$(GACUTIL) /i $(the_lib) /f $(gacdir_flag) /root $(GACROOT) $(package_flag)
++	$(GACUTIL) -i $(the_lib) -f $(gacdir_flag) -root $(GACROOT) $(package_flag)
+ 
+ uninstall-local: $(gacutil)
+-	-$(GACUTIL) /u $(LIBRARY_NAME:.dll=) $(gacdir_flag) /root $(GACROOT) $(package_flag)
++	-$(GACUTIL) -u $(LIBRARY_NAME:.dll=) $(gacdir_flag) -root $(GACROOT) $(package_flag)
+ 
+ endif # LIBRARY_INSTALL_DIR
+ endif # NO_INSTALL
+@@ -351,7 +351,7 @@
+ 
+ -include $(makefrag)
+ 
+-# for now, don't give any /lib flags or set MONO_PATH, since we
++# for now, don't give any -lib flags or set MONO_PATH, since we
+ # give a full path to the assembly.
+ 
+ ## Include corcompare stuff
+diff -ura mono-4.8.0.orig/mcs/build/platforms/darwin.make mono-4.8.0.new/mcs/build/platforms/darwin.make
+--- mono-4.8.0.orig/mcs/build/platforms/darwin.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/platforms/darwin.make	2017-03-03 12:22:09.425978600 +0100
+@@ -20,7 +20,7 @@
+ # Define this if this ever will work on Linux
+ # PLATFORM_MAKE_CORLIB_CMP = yes
+ 
+-# This is for changing / to \ on windows
++# This is for changing - to \ on windows
+ PLATFORM_CHANGE_SEPARATOR_CMD = cat
+ 
+ hidden_prefix = .
+diff -ura mono-4.8.0.orig/mcs/build/platforms/linux.make mono-4.8.0.new/mcs/build/platforms/linux.make
+--- mono-4.8.0.orig/mcs/build/platforms/linux.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/platforms/linux.make	2017-03-03 12:22:09.472858300 +0100
+@@ -20,7 +20,7 @@
+ # Define this if this ever will work on Linux
+ # PLATFORM_MAKE_CORLIB_CMP = yes
+ 
+-# This is for changing / to \ on windows
++# This is for changing - to \ on windows
+ PLATFORM_CHANGE_SEPARATOR_CMD = cat
+ 
+ hidden_prefix = .
+diff -ura mono-4.8.0.orig/mcs/build/platforms/win32.make mono-4.8.0.new/mcs/build/platforms/win32.make
+--- mono-4.8.0.orig/mcs/build/platforms/win32.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/platforms/win32.make	2017-03-03 12:53:45.033012300 +0100
+@@ -3,31 +3,28 @@
+ # Win32 platform-specific makefile rules.
+ #
+ 
+-PLATFORM_DEBUG_FLAGS = /debug+ /debug:full
+-PLATFORM_MCS_FLAGS = /nologo
+-PLATFORM_RUNTIME = 
++PLATFORM_DEBUG_FLAGS = -debug+ -debug:full
++PLATFORM_MCS_FLAGS = -nologo
++PLATFORM_RUNTIME = $(RUNTIME)
+ PLATFORM_CORLIB = mscorlib.dll
+ PLATFORM_TEST_HARNESS_EXCLUDES =
+ 
+ EXTERNAL_MCS = mcs
+-EXTERNAL_MBAS = vbc.exe
+-EXTERNAL_RUNTIME =
++EXTERNAL_MBAS = mbas
++EXTERNAL_RUNTIME = mono
++#ILDISASM = monodis
++ILDISASM = false
+ 
+-# Disabled since it needs the SDK
+-#ILDISASM = ildasm.exe /test
++PLATFORM_PATH_SEPARATOR = :
+ 
+-#ILDISASM = monodis.bat
+-## Gross hack
+-ILDISASM = $(topdir)/../mono/mono/dis/monodis
++# Define this if this ever will work on Linux
++# PLATFORM_MAKE_CORLIB_CMP = yes
+ 
+-PLATFORM_MAKE_CORLIB_CMP = yes
+-PLATFORM_CHANGE_SEPARATOR_CMD=tr '/' '\\\\'
+-PLATFORM_PATH_SEPARATOR = ;
++# This is for changing - to \ on windows
++PLATFORM_CHANGE_SEPARATOR_CMD = cat
+ 
+-override CURDIR:=$(shell cygpath -m $(CURDIR))
+-
+-hidden_prefix = 
+-hidden_suffix = .tmp
++hidden_prefix = .
++hidden_suffix = 
+ 
+ platform-check:
+ 	@:
+diff -ura mono-4.8.0.orig/mcs/build/profiles/basic.make mono-4.8.0.new/mcs/build/profiles/basic.make
+--- mono-4.8.0.orig/mcs/build/profiles/basic.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/profiles/basic.make	2017-03-03 15:56:39.396688100 +0100
+@@ -33,7 +33,7 @@
+ #
+ # Copy from rules.make because I don't know how to unset MCS_FLAGS
+ #
+-USE_MCS_FLAGS = /codepage:$(CODEPAGE) $(LOCAL_MCS_FLAGS) $(PLATFORM_MCS_FLAGS) $(PROFILE_MCS_FLAGS)
++USE_MCS_FLAGS = -codepage:$(CODEPAGE) $(LOCAL_MCS_FLAGS) $(PLATFORM_MCS_FLAGS) $(PROFILE_MCS_FLAGS)
+ 
+ .PHONY: profile-check do-profile-check
+ profile-check:
+@@ -90,7 +90,7 @@
+ endif
+ 
+ $(PROFILE_EXE): $(topdir)/build/common/basic-profile-check.cs
+-	$(BOOTSTRAP_MCS) /warn:0 /out:$@ $<
++	$(BOOTSTRAP_MCS) -warn:0 -out:$@ $<
+ 	echo -n "Bootstrap compiler: " 1>&2
+ 	$(BOOTSTRAP_MCS) --version 1>&2
+ 
+diff -ura mono-4.8.0.orig/mcs/build/profiles/net_4_x.make mono-4.8.0.new/mcs/build/profiles/net_4_x.make
+--- mono-4.8.0.orig/mcs/build/profiles/net_4_x.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/profiles/net_4_x.make	2017-03-03 14:23:15.135433900 +0100
+@@ -11,7 +11,7 @@
+ 	@:
+ 
+ DEFAULT_REFERENCES = -r:$(topdir)/class/lib/$(PROFILE)/mscorlib.dll
+-PROFILE_MCS_FLAGS = -d:NET_4_0 -d:NET_4_5 -d:NET_4_6 -d:MONO  -nowarn:1699 -nostdlib $(DEFAULT_REFERENCES) $(PLATFORM_DEBUG_FLAGS)
++PROFILE_MCS_FLAGS = -d:NET_4_0 -d:NET_4_5 -d:NET_4_6 -d:MONO -nowarn:1699 -nostdlib $(DEFAULT_REFERENCES) $(PLATFORM_DEBUG_FLAGS)
+ 
+ FRAMEWORK_VERSION = 4.5
+ XBUILD_VERSION = 4.0
+diff -ura mono-4.8.0.orig/mcs/build/rules.make mono-4.8.0.new/mcs/build/rules.make
+--- mono-4.8.0.orig/mcs/build/rules.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/rules.make	2017-03-03 13:16:53.688591700 +0100
+@@ -28,8 +28,8 @@
+ BUILD_TOOLS_PROFILE = build
+ endif
+ 
+-USE_MCS_FLAGS = /codepage:$(CODEPAGE) $(LOCAL_MCS_FLAGS) $(PLATFORM_MCS_FLAGS) $(PROFILE_MCS_FLAGS) $(MCS_FLAGS)
+-USE_MBAS_FLAGS = /codepage:$(CODEPAGE) $(LOCAL_MBAS_FLAGS) $(PLATFORM_MBAS_FLAGS) $(PROFILE_MBAS_FLAGS) $(MBAS_FLAGS)
++USE_MCS_FLAGS = -codepage:$(CODEPAGE) $(LOCAL_MCS_FLAGS) $(PLATFORM_MCS_FLAGS) $(PROFILE_MCS_FLAGS) $(MCS_FLAGS)
++USE_MBAS_FLAGS = -codepage:$(CODEPAGE) $(LOCAL_MBAS_FLAGS) $(PLATFORM_MBAS_FLAGS) $(PROFILE_MBAS_FLAGS) $(MBAS_FLAGS)
+ USE_CFLAGS = $(LOCAL_CFLAGS) $(CFLAGS) $(CPPFLAGS)
+ CSCOMPILE = $(Q_MCS) $(MCS) $(USE_MCS_FLAGS)
+ BASCOMPILE = $(MBAS) $(USE_MBAS_FLAGS)
+diff -ura mono-4.8.0.orig/mcs/build/tests.make mono-4.8.0.new/mcs/build/tests.make
+--- mono-4.8.0.orig/mcs/build/tests.make	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/build/tests.make	2017-03-03 12:22:09.691631200 +0100
+@@ -88,7 +88,7 @@
+ run-test-ondotnet-local: run-test-ondotnet-lib
+ 
+ TEST_HARNESS_EXCLUDES = -exclude=$(PLATFORM_TEST_HARNESS_EXCLUDES)$(PROFILE_TEST_HARNESS_EXCLUDES)NotWorking,ValueAdd,CAS,InetAccess
+-TEST_HARNESS_EXCLUDES_ONDOTNET = /exclude:$(PLATFORM_TEST_HARNESS_EXCLUDES)$(PROFILE_TEST_HARNESS_EXCLUDES)NotDotNet,CAS
++TEST_HARNESS_EXCLUDES_ONDOTNET = -exclude:$(PLATFORM_TEST_HARNESS_EXCLUDES)$(PROFILE_TEST_HARNESS_EXCLUDES)NotDotNet,CAS
+ 
+ ifdef NUNIT_LITE
+ NOSHADOW_FLAG =
+@@ -118,8 +118,8 @@
+ else
+ TEST_HARNESS_OUTPUT = $(OUTPUT_FILE_FLAG)=TestResult-$(PROFILE).log
+ TEST_HARNESS_OUTPUT_ONDOTNET = $(OUTPUT_FILE_FLAG)=TestResult-ondotnet-$(PROFILE).log
+-TEST_HARNESS_POSTPROC = (echo ''; cat TestResult-$(PROFILE).log) | sed '1,/^Tests run: /d'; xsltproc $(topdir)/build/nunit-summary.xsl TestResult-$(PROFILE).xml >> TestResult-$(PROFILE).log
+-TEST_HARNESS_POSTPROC_ONDOTNET = (echo ''; cat TestResult-ondotnet-$(PROFILE).log) | sed '1,/^Tests run: /d'; xsltproc $(topdir)/build/nunit-summary.xsl TestResult-ondotnet-$(PROFILE).xml >> TestResult-ondotnet-$(PROFILE).log
++TEST_HARNESS_POSTPROC = (echo ''; cat TestResult-$(PROFILE).log) | sed '1,/^Tests run: -d'; xsltproc $(topdir)/build/nunit-summary.xsl TestResult-$(PROFILE).xml >> TestResult-$(PROFILE).log
++TEST_HARNESS_POSTPROC_ONDOTNET = (echo ''; cat TestResult-ondotnet-$(PROFILE).log) | sed '1,/^Tests run: -d'; xsltproc $(topdir)/build/nunit-summary.xsl TestResult-ondotnet-$(PROFILE).xml >> TestResult-ondotnet-$(PROFILE).log
+ endif
+ 
+ ifdef FIXTURE
+diff -ura mono-4.8.0.orig/mcs/class/Commons.Xml.Relaxng/Makefile mono-4.8.0.new/mcs/class/Commons.Xml.Relaxng/Makefile
+--- mono-4.8.0.orig/mcs/class/Commons.Xml.Relaxng/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Commons.Xml.Relaxng/Makefile	2017-03-03 16:11:11.281317700 +0100
+@@ -9,7 +9,7 @@
+ LIBRARY = Commons.Xml.Relaxng.dll
+ LIB_REFS = System System.Xml
+ LIB_MCS_FLAGS = \
+-	$(foreach r, $(OTHER_RES), /resource:$(r),$(notdir $(r)))
++	$(foreach r, $(OTHER_RES), -resource:$(r),$(notdir $(r)))
+ TEST_MCS_FLAGS = $(LIB_MCS_FLAGS) -nowarn:0618 -nowarn:219 -nowarn:169
+ EXTRA_DISTFILES = \
+ 	Commons.Xml.Relaxng.Rnc/RncParser.jay	\
+diff -ura mono-4.8.0.orig/mcs/class/corlib/Makefile mono-4.8.0.new/mcs/class/corlib/Makefile
+--- mono-4.8.0.orig/mcs/class/corlib/Makefile	2017-02-22 17:33:16.000000000 +0100
++++ mono-4.8.0.new/mcs/class/corlib/Makefile	2017-03-03 16:11:11.328198200 +0100
+@@ -207,7 +207,7 @@
+ 	trap "rm -f $(TMP_FILE1) $(TMP_FILE2)" EXIT INT QUIT TERM && \
+ 	sed 's/Environment\.GetResourceString/string.Format/g' ../referencesource/mscorlib/system/timezoneinfo.cs > $(TMP_FILE1) && \
+ 	sed 's/StringBuilder\.DefaultCapacity/100/g' ../referencesource/mscorlib/system/text/stringbuildercache.cs > $(TMP_FILE2) && \
+-	$(MCS) /debug+ /out:$@ -unsafe -nowarn:612,618 -d:INSIDE_CORLIB,MONO_CULTURE_DATA -d:LIBC $(REFERENCE_SOURCES_FLAGS) "/d:SELF_TEST;NET_1_1;NET_2_0;MOBILE;NET_3_5;NET_4_0;NET_4_5;MONO;DISABLE_CAS_USE;MOBILE;MOBILE_DYNAMIC;MONODROID;ANDROID" $^ $(TMP_FILE1) $(TMP_FILE2)
++	$(MCS) -debug+ -out:$@ -unsafe -nowarn:612,618 -d:INSIDE_CORLIB,MONO_CULTURE_DATA -d:LIBC $(REFERENCE_SOURCES_FLAGS) "/d:SELF_TEST;NET_1_1;NET_2_0;MOBILE;NET_3_5;NET_4_0;NET_4_5;MONO;DISABLE_CAS_USE;MOBILE;MOBILE_DYNAMIC;MONODROID;ANDROID" $^ $(TMP_FILE1) $(TMP_FILE2)
+ 
+ android-pull-tzdb:
+ 	mkdir -p android/tzdb/usr/share/zoneinfo
+diff -ura mono-4.8.0.orig/mcs/class/Facades/Microsoft.Win32.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/Microsoft.Win32.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/Microsoft.Win32.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/Microsoft.Win32.Primitives/Makefile	2017-03-03 16:11:11.546971100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = Microsoft.Win32.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/Microsoft.Win32.Registry/Makefile mono-4.8.0.new/mcs/class/Facades/Microsoft.Win32.Registry/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/Microsoft.Win32.Registry/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/Microsoft.Win32.Registry/Makefile	2017-03-03 16:11:11.562597700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = Microsoft.Win32.Registry.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/Microsoft.Win32.Registry.AccessControl/Makefile mono-4.8.0.new/mcs/class/Facades/Microsoft.Win32.Registry.AccessControl/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/Microsoft.Win32.Registry.AccessControl/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/Microsoft.Win32.Registry.AccessControl/Makefile	2017-03-03 16:11:11.593853500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = Microsoft.Win32.Registry.AccessControl.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.AppContext/Makefile mono-4.8.0.new/mcs/class/Facades/System.AppContext/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.AppContext/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.AppContext/Makefile	2017-03-03 16:11:11.625105900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.AppContext.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Collections/Makefile mono-4.8.0.new/mcs/class/Facades/System.Collections/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Collections/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Collections/Makefile	2017-03-03 16:11:11.656361000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Collections.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Collections.Concurrent/Makefile mono-4.8.0.new/mcs/class/Facades/System.Collections.Concurrent/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Collections.Concurrent/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Collections.Concurrent/Makefile	2017-03-03 16:11:11.687611500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Collections.Concurrent.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Collections.NonGeneric/Makefile mono-4.8.0.new/mcs/class/Facades/System.Collections.NonGeneric/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Collections.NonGeneric/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Collections.NonGeneric/Makefile	2017-03-03 16:11:11.765746700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Collections.NonGeneric.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Collections.Specialized/Makefile mono-4.8.0.new/mcs/class/Facades/System.Collections.Specialized/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Collections.Specialized/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Collections.Specialized/Makefile	2017-03-03 16:11:11.796997600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Collections.Specialized.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel/Makefile mono-4.8.0.new/mcs/class/Facades/System.ComponentModel/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ComponentModel/Makefile	2017-03-03 16:11:11.828250700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ComponentModel.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.Annotations/Makefile mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.Annotations/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.Annotations/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.Annotations/Makefile	2017-03-03 16:11:11.859505400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ComponentModel.Annotations.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.ComponentModel.DataAnnotations
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.EventBasedAsync/Makefile mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.EventBasedAsync/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.EventBasedAsync/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.EventBasedAsync/Makefile	2017-03-03 16:11:11.906384000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ComponentModel.EventBasedAsync.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.Primitives/Makefile	2017-03-03 16:11:11.937638700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ComponentModel.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.TypeConverter/Makefile mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.TypeConverter/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ComponentModel.TypeConverter/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ComponentModel.TypeConverter/Makefile	2017-03-03 16:11:11.968890000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ComponentModel.TypeConverter.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Console/Makefile mono-4.8.0.new/mcs/class/Facades/System.Console/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Console/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Console/Makefile	2017-03-03 16:11:12.000144200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Console.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Data.Common/Makefile mono-4.8.0.new/mcs/class/Facades/System.Data.Common/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Data.Common/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Data.Common/Makefile	2017-03-03 16:11:12.015771200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Data.Common.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Data System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Data.SqlClient/Makefile mono-4.8.0.new/mcs/class/Facades/System.Data.SqlClient/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Data.SqlClient/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Data.SqlClient/Makefile	2017-03-03 16:11:12.078277900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Data.SqlClient.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Data System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Contracts/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Contracts/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Contracts/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Contracts/Makefile	2017-03-03 16:11:12.109530700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.Contracts.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Debug/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Debug/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Debug/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Debug/Makefile	2017-03-03 16:11:12.140784200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.Debug.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.FileVersionInfo/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.FileVersionInfo/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.FileVersionInfo/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.FileVersionInfo/Makefile	2017-03-03 16:11:12.172037400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.FileVersionInfo.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Process/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Process/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Process/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Process/Makefile	2017-03-03 16:11:12.234544100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.Process.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.StackTrace/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.StackTrace/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.StackTrace/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.StackTrace/Makefile	2017-03-03 16:11:12.250171100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.StackTrace.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.TextWriterTraceListener/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.TextWriterTraceListener/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.TextWriterTraceListener/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.TextWriterTraceListener/Makefile	2017-03-03 16:11:12.281426100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.TextWriterTraceListener.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Tools/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Tools/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Tools/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Tools/Makefile	2017-03-03 16:11:12.297050800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.Tools.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.TraceEvent/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.TraceEvent/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.TraceEvent/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.TraceEvent/Makefile	2017-03-03 16:11:12.328304700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.TraceEvent.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.TraceSource/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.TraceSource/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.TraceSource/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.TraceSource/Makefile	2017-03-03 16:11:12.343934300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.TraceSource.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Tracing/Makefile mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Tracing/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Diagnostics.Tracing/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Diagnostics.Tracing/Makefile	2017-03-03 16:11:12.375185200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Diagnostics.Tracing.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ NO_TEST = yes
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Drawing.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.Drawing.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Drawing.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Drawing.Primitives/Makefile	2017-03-03 16:11:12.406438800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Drawing.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) $(EXTRA_LIB_MCS_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Dynamic.Runtime/Makefile mono-4.8.0.new/mcs/class/Facades/System.Dynamic.Runtime/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Dynamic.Runtime/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Dynamic.Runtime/Makefile	2017-03-03 16:11:12.437694200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Dynamic.Runtime.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Core System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Globalization/Makefile mono-4.8.0.new/mcs/class/Facades/System.Globalization/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Globalization/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Globalization/Makefile	2017-03-03 16:11:12.453318500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Globalization.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Globalization.Calendars/Makefile mono-4.8.0.new/mcs/class/Facades/System.Globalization.Calendars/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Globalization.Calendars/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Globalization.Calendars/Makefile	2017-03-03 16:11:12.484572000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Globalization.Calendars.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Globalization.Extensions/Makefile mono-4.8.0.new/mcs/class/Facades/System.Globalization.Extensions/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Globalization.Extensions/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Globalization.Extensions/Makefile	2017-03-03 16:11:12.515827800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Globalization.Extensions.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO/Makefile	2017-03-03 16:11:12.547078700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.Compression.ZipFile/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.Compression.ZipFile/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.Compression.ZipFile/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.Compression.ZipFile/Makefile	2017-03-03 16:11:12.562707200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.Compression.ZipFile.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.IO.Compression.FileSystem
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem/Makefile	2017-03-03 16:11:12.625216200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.FileSystem.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.AccessControl/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.AccessControl/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.AccessControl/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.AccessControl/Makefile	2017-03-03 16:11:12.640838200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.FileSystem.AccessControl.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.DriveInfo/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.DriveInfo/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.DriveInfo/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.DriveInfo/Makefile	2017-03-03 16:11:12.672091400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.FileSystem.DriveInfo.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.Primitives/Makefile	2017-03-03 16:11:12.703345300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.FileSystem.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.Watcher/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.Watcher/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.FileSystem.Watcher/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.FileSystem.Watcher/Makefile	2017-03-03 16:11:12.718971900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.FileSystem.Watcher.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.IsolatedStorage/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.IsolatedStorage/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.IsolatedStorage/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.IsolatedStorage/Makefile	2017-03-03 16:11:12.734598800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.IsolatedStorage.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.MemoryMappedFiles/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.MemoryMappedFiles/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.MemoryMappedFiles/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.MemoryMappedFiles/Makefile	2017-03-03 16:11:12.765852400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.MemoryMappedFiles.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.Pipes/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.Pipes/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.Pipes/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.Pipes/Makefile	2017-03-03 16:11:12.812731800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.Pipes.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.IO.UnmanagedMemoryStream/Makefile mono-4.8.0.new/mcs/class/Facades/System.IO.UnmanagedMemoryStream/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.IO.UnmanagedMemoryStream/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.IO.UnmanagedMemoryStream/Makefile	2017-03-03 16:11:12.843984900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.IO.UnmanagedMemoryStream.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Linq/Makefile mono-4.8.0.new/mcs/class/Facades/System.Linq/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Linq/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Linq/Makefile	2017-03-03 16:11:12.875238500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Linq.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Linq.Expressions/Makefile mono-4.8.0.new/mcs/class/Facades/System.Linq.Expressions/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Linq.Expressions/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Linq.Expressions/Makefile	2017-03-03 16:11:12.890866200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Linq.Expressions.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Linq.Parallel/Makefile mono-4.8.0.new/mcs/class/Facades/System.Linq.Parallel/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Linq.Parallel/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Linq.Parallel/Makefile	2017-03-03 16:11:12.937748200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Linq.Parallel.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Linq.Queryable/Makefile mono-4.8.0.new/mcs/class/Facades/System.Linq.Queryable/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Linq.Queryable/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Linq.Queryable/Makefile	2017-03-03 16:11:12.968998300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Linq.Queryable.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.AuthenticationManager/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.AuthenticationManager/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.AuthenticationManager/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.AuthenticationManager/Makefile	2017-03-03 16:11:12.984624900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.AuthenticationManager.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Cache/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Cache/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Cache/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Cache/Makefile	2017-03-03 16:11:13.015880700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Cache.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.HttpListener/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.HttpListener/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.HttpListener/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.HttpListener/Makefile	2017-03-03 16:11:13.062759300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.HttpListener.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Mail/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Mail/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Mail/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Mail/Makefile	2017-03-03 16:11:13.094012100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Mail.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.NameResolution/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.NameResolution/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.NameResolution/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.NameResolution/Makefile	2017-03-03 16:11:13.109640200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.NameResolution.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.NetworkInformation/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.NetworkInformation/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.NetworkInformation/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.NetworkInformation/Makefile	2017-03-03 16:11:13.140891800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.NetworkInformation.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Ping/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Ping/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Ping/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Ping/Makefile	2017-03-03 16:11:13.187771600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Ping.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Primitives/Makefile	2017-03-03 16:11:13.219024800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Requests/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Requests/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Requests/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Requests/Makefile	2017-03-03 16:11:13.234651700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Requests.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Security/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Security/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Security/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Security/Makefile	2017-03-03 16:11:13.265907900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Security.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.ServicePoint/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.ServicePoint/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.ServicePoint/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.ServicePoint/Makefile	2017-03-03 16:11:13.312786900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.ServicePoint.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Sockets/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Sockets/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Sockets/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Sockets/Makefile	2017-03-03 16:11:13.344039300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Sockets.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.Utilities/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.Utilities/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.Utilities/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.Utilities/Makefile	2017-03-03 16:11:13.375292500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.Utilities.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.WebHeaderCollection/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.WebHeaderCollection/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.WebHeaderCollection/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.WebHeaderCollection/Makefile	2017-03-03 16:11:13.406544900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.WebHeaderCollection.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.WebSockets/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.WebSockets/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.WebSockets/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.WebSockets/Makefile	2017-03-03 16:11:13.453425000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.WebSockets.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Net.WebSockets.Client/Makefile mono-4.8.0.new/mcs/class/Facades/System.Net.WebSockets.Client/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Net.WebSockets.Client/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Net.WebSockets.Client/Makefile	2017-03-03 16:11:13.469051600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Net.WebSockets.Client.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ObjectModel/Makefile mono-4.8.0.new/mcs/class/Facades/System.ObjectModel/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ObjectModel/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ObjectModel/Makefile	2017-03-03 16:11:13.515933600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ObjectModel.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Reflection/Makefile mono-4.8.0.new/mcs/class/Facades/System.Reflection/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Reflection/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Reflection/Makefile	2017-03-03 16:11:13.531560900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Reflection.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Emit/Makefile mono-4.8.0.new/mcs/class/Facades/System.Reflection.Emit/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Emit/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Reflection.Emit/Makefile	2017-03-03 16:11:13.562813700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Reflection.Emit.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Emit.ILGeneration/Makefile mono-4.8.0.new/mcs/class/Facades/System.Reflection.Emit.ILGeneration/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Emit.ILGeneration/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Reflection.Emit.ILGeneration/Makefile	2017-03-03 16:11:13.594068000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Reflection.Emit.ILGeneration.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Emit.Lightweight/Makefile mono-4.8.0.new/mcs/class/Facades/System.Reflection.Emit.Lightweight/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Emit.Lightweight/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Reflection.Emit.Lightweight/Makefile	2017-03-03 16:11:13.625318100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Reflection.Emit.Lightweight.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Extensions/Makefile mono-4.8.0.new/mcs/class/Facades/System.Reflection.Extensions/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Extensions/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Reflection.Extensions/Makefile	2017-03-03 16:11:13.656573600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Reflection.Extensions.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.Reflection.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Reflection.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Reflection.Primitives/Makefile	2017-03-03 16:11:13.703452200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Reflection.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Reflection.TypeExtensions/Makefile mono-4.8.0.new/mcs/class/Facades/System.Reflection.TypeExtensions/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Reflection.TypeExtensions/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Reflection.TypeExtensions/Makefile	2017-03-03 16:11:13.719078700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Reflection.TypeExtensions.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Resources.ReaderWriter/Makefile mono-4.8.0.new/mcs/class/Facades/System.Resources.ReaderWriter/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Resources.ReaderWriter/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Resources.ReaderWriter/Makefile	2017-03-03 16:11:13.750333000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Resources.ReaderWriter.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Resources.ResourceManager/Makefile mono-4.8.0.new/mcs/class/Facades/System.Resources.ResourceManager/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Resources.ResourceManager/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Resources.ResourceManager/Makefile	2017-03-03 16:11:13.781585800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Resources.ResourceManager.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime/Makefile	2017-03-03 16:11:13.812839000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.ComponentModel.Composition System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.CompilerServices.VisualC/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.CompilerServices.VisualC/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.CompilerServices.VisualC/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.CompilerServices.VisualC/Makefile	2017-03-03 16:11:13.844092100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.CompilerServices.VisualC.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Extensions/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.Extensions/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Extensions/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.Extensions/Makefile	2017-03-03 16:11:13.875345300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.Extensions.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Handles/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.Handles/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Handles/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.Handles/Makefile	2017-03-03 16:11:13.890973400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.Handles.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.InteropServices/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.InteropServices/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.InteropServices/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.InteropServices/Makefile	2017-03-03 16:11:13.937854700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.InteropServices.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.InteropServices.WindowsRuntime/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.InteropServices.WindowsRuntime/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.InteropServices.WindowsRuntime/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.InteropServices.WindowsRuntime/Makefile	2017-03-03 16:11:13.953481600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.InteropServices.WindowsRuntime.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Numerics/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.Numerics/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Numerics/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.Numerics/Makefile	2017-03-03 16:11:13.984732500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.Numerics.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Numerics
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Formatters/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Formatters/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Formatters/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Formatters/Makefile	2017-03-03 16:11:14.000358700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.Serialization.Formatters.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Json/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Json/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Json/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Json/Makefile	2017-03-03 16:11:14.047240300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.Serialization.Json.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Runtime.Serialization
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Primitives/Makefile	2017-03-03 16:11:14.062865000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Runtime.Serialization.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Runtime.Serialization
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Xml/Makefile mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Xml/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Runtime.Serialization.Xml/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Runtime.Serialization.Xml/Makefile	2017-03-03 16:11:14.094119300 +0100
+@@ -10,12 +10,12 @@
+ LIBRARY = System.Runtime.Serialization.Xml.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Runtime.Serialization System.Xml Facades/System.Runtime.Serialization.Primitives
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ ifeq (2.1, $(FRAMEWORK_VERSION))
+-LIB_MCS_FLAGS += /d:NO_CODEDOM
++LIB_MCS_FLAGS += -d:NO_CODEDOM
+ endif
+ 
+ NO_TEST = yes
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.AccessControl/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.AccessControl/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.AccessControl/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.AccessControl/Makefile	2017-03-03 16:11:14.109745500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.AccessControl.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Claims/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Claims/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Claims/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Claims/Makefile	2017-03-03 16:11:14.156625700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Claims.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Cng/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Cng/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Cng/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Cng/Makefile	2017-03-03 16:11:14.219135400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Cng.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Csp/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Csp/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Csp/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Csp/Makefile	2017-03-03 16:11:14.250387800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Csp.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.DeriveBytes/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.DeriveBytes/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.DeriveBytes/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.DeriveBytes/Makefile	2017-03-03 16:11:14.281639400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.DeriveBytes.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encoding/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encoding/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encoding/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encoding/Makefile	2017-03-03 16:11:14.312891800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Encoding.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption/Makefile	2017-03-03 16:11:14.344146100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Encryption.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption.Aes/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption.Aes/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption.Aes/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption.Aes/Makefile	2017-03-03 16:11:14.375400400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Encryption.Aes.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDiffieHellman/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDiffieHellman/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDiffieHellman/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDiffieHellman/Makefile	2017-03-03 16:11:14.406654400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Encryption.ECDiffieHellman.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDsa/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDsa/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDsa/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Encryption.ECDsa/Makefile	2017-03-03 16:11:14.437908300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Encryption.ECDsa.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Hashing/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Hashing/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Hashing/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Hashing/Makefile	2017-03-03 16:11:14.469159500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Hashing.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Hashing.Algorithms/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Hashing.Algorithms/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Hashing.Algorithms/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Hashing.Algorithms/Makefile	2017-03-03 16:11:14.500411600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Hashing.Algorithms.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Pkcs/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Pkcs/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Pkcs/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Pkcs/Makefile	2017-03-03 16:11:14.516039300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Pkcs.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Security
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.Primitives/Makefile	2017-03-03 16:11:14.547292100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.ProtectedData/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.ProtectedData/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.ProtectedData/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.ProtectedData/Makefile	2017-03-03 16:11:14.562919400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.ProtectedData.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Security
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.RandomNumberGenerator/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.RandomNumberGenerator/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.RandomNumberGenerator/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.RandomNumberGenerator/Makefile	2017-03-03 16:11:14.594172200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.RandomNumberGenerator.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.RSA/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.RSA/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.RSA/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.RSA/Makefile	2017-03-03 16:11:14.625426100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.RSA.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.X509Certificates/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.X509Certificates/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Cryptography.X509Certificates/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Cryptography.X509Certificates/Makefile	2017-03-03 16:11:14.641053100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Cryptography.X509Certificates.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Principal/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Principal/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Principal/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Principal/Makefile	2017-03-03 16:11:14.672305500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Principal.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.Principal.Windows/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.Principal.Windows/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.Principal.Windows/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.Principal.Windows/Makefile	2017-03-03 16:11:14.719187500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.Principal.Windows.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Security.SecureString/Makefile mono-4.8.0.new/mcs/class/Facades/System.Security.SecureString/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Security.SecureString/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Security.SecureString/Makefile	2017-03-03 16:11:14.750438800 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Security.SecureString.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Duplex/Makefile mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Duplex/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Duplex/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Duplex/Makefile	2017-03-03 16:11:14.781693400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ServiceModel.Duplex.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.ServiceModel
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Http/Makefile mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Http/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Http/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Http/Makefile	2017-03-03 16:11:14.812945500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ServiceModel.Http.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.ServiceModel
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.NetTcp/Makefile mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.NetTcp/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.NetTcp/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.NetTcp/Makefile	2017-03-03 16:11:14.828573200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ServiceModel.NetTcp.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.ServiceModel
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Primitives/Makefile	2017-03-03 16:11:14.859827500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ServiceModel.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.ServiceModel System.Xml System.IdentityModel Facades/System.Security.Cryptography.X509Certificates
+ 
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Security/Makefile mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Security/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ServiceModel.Security/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ServiceModel.Security/Makefile	2017-03-03 16:11:14.891079900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ServiceModel.Security.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.ServiceModel
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.ServiceProcess.ServiceController/Makefile mono-4.8.0.new/mcs/class/Facades/System.ServiceProcess.ServiceController/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.ServiceProcess.ServiceController/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.ServiceProcess.ServiceController/Makefile	2017-03-03 16:11:14.922333000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.ServiceProcess.ServiceController.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ 
+ ifneq (2.1, $(FRAMEWORK_VERSION))
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Text.Encoding/Makefile mono-4.8.0.new/mcs/class/Facades/System.Text.Encoding/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Text.Encoding/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Text.Encoding/Makefile	2017-03-03 16:11:14.937960400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Text.Encoding.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Text.Encoding.CodePages/Makefile mono-4.8.0.new/mcs/class/Facades/System.Text.Encoding.CodePages/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Text.Encoding.CodePages/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Text.Encoding.CodePages/Makefile	2017-03-03 16:11:14.969213500 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Text.Encoding.CodePages.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Text.Encoding.Extensions/Makefile mono-4.8.0.new/mcs/class/Facades/System.Text.Encoding.Extensions/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Text.Encoding.Extensions/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Text.Encoding.Extensions/Makefile	2017-03-03 16:11:15.016092200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Text.Encoding.Extensions.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Text.RegularExpressions/Makefile mono-4.8.0.new/mcs/class/Facades/System.Text.RegularExpressions/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Text.RegularExpressions/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Text.RegularExpressions/Makefile	2017-03-03 16:11:15.031719100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Text.RegularExpressions.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading/Makefile	2017-03-03 16:11:15.062972700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading.AccessControl/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading.AccessControl/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading.AccessControl/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading.AccessControl/Makefile	2017-03-03 16:11:15.094226200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.AccessControl.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading.Overlapped/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading.Overlapped/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading.Overlapped/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading.Overlapped/Makefile	2017-03-03 16:11:15.125480100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.Overlapped.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) -unsafe
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading.Tasks/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading.Tasks/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading.Tasks/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading.Tasks/Makefile	2017-03-03 16:11:15.156736700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.Tasks.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading.Tasks.Parallel/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading.Tasks.Parallel/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading.Tasks.Parallel/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading.Tasks.Parallel/Makefile	2017-03-03 16:11:15.187991300 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.Tasks.Parallel.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+ PLATFORM_DEBUG_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading.Thread/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading.Thread/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading.Thread/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading.Thread/Makefile	2017-03-03 16:11:15.203613000 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.Thread.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading.ThreadPool/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading.ThreadPool/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading.ThreadPool/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading.ThreadPool/Makefile	2017-03-03 16:11:15.234868100 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.ThreadPool.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Threading.Timer/Makefile mono-4.8.0.new/mcs/class/Facades/System.Threading.Timer/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Threading.Timer/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Threading.Timer/Makefile	2017-03-03 16:11:15.266122400 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Threading.Timer.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Core
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Xml.ReaderWriter/Makefile mono-4.8.0.new/mcs/class/Facades/System.Xml.ReaderWriter/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Xml.ReaderWriter/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Xml.ReaderWriter/Makefile	2017-03-03 16:11:15.297372900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Xml.ReaderWriter.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Xml.XDocument/Makefile mono-4.8.0.new/mcs/class/Facades/System.Xml.XDocument/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Xml.XDocument/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Xml.XDocument/Makefile	2017-03-03 16:11:15.328628700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Xml.XDocument.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Xml.Linq System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Xml.XmlDocument/Makefile mono-4.8.0.new/mcs/class/Facades/System.Xml.XmlDocument/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Xml.XmlDocument/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Xml.XmlDocument/Makefile	2017-03-03 16:11:15.375506900 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Xml.XmlDocument.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Xml.XmlSerializer/Makefile mono-4.8.0.new/mcs/class/Facades/System.Xml.XmlSerializer/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Xml.XmlSerializer/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Xml.XmlSerializer/Makefile	2017-03-03 16:11:15.406759700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Xml.XmlSerializer.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS) 
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Xml.XPath/Makefile mono-4.8.0.new/mcs/class/Facades/System.Xml.XPath/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Xml.XPath/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Xml.XPath/Makefile	2017-03-03 16:11:15.422386700 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Xml.XPath.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Xml.XPath.XDocument/Makefile mono-4.8.0.new/mcs/class/Facades/System.Xml.XPath.XDocument/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Xml.XPath.XDocument/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Xml.XPath.XDocument/Makefile	2017-03-03 16:11:15.469267200 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Xml.XPath.XDocument.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Xml System.Xml.Linq
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Facades/System.Xml.Xsl.Primitives/Makefile mono-4.8.0.new/mcs/class/Facades/System.Xml.Xsl.Primitives/Makefile
+--- mono-4.8.0.orig/mcs/class/Facades/System.Xml.Xsl.Primitives/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Facades/System.Xml.Xsl.Primitives/Makefile	2017-03-03 16:11:15.500519600 +0100
+@@ -10,7 +10,7 @@
+ LIBRARY = System.Xml.Xsl.Primitives.dll
+ 
+ KEY_FILE = ../../msfinal.pub
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE) /nowarn:1616,1699
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE) -nowarn:1616,1699
+ LIB_REFS = System System.Xml
+ LIB_MCS_FLAGS = $(SIGN_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/I18N/CJK/Makefile mono-4.8.0.new/mcs/class/I18N/CJK/Makefile
+--- mono-4.8.0.orig/mcs/class/I18N/CJK/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/I18N/CJK/Makefile	2017-03-03 16:11:15.531773100 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = I18N.CJK.dll
+ LIB_REFS = I18N
+-LOCAL_MCS_FLAGS = /unsafe /resource:big5.table /resource:gb2312.table /resource:jis.table /resource:ks.table /resource:gb18030.table /define:DISABLE_UNSAFE
++LOCAL_MCS_FLAGS = -unsafe -resource:big5.table -resource:gb2312.table -resource:jis.table -resource:ks.table -resource:gb18030.table -define:DISABLE_UNSAFE
+ TEST_LIB_REFS = I18N
+ 
+ EXTRA_DISTFILES = big5.table jis.table gb2312.table ks.table gb18030.table \
+diff -ura mono-4.8.0.orig/mcs/class/I18N/Common/Makefile mono-4.8.0.new/mcs/class/I18N/Common/Makefile
+--- mono-4.8.0.orig/mcs/class/I18N/Common/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/I18N/Common/Makefile	2017-03-03 16:11:15.547398900 +0100
+@@ -3,7 +3,7 @@
+ include ../../../build/rules.make
+ 
+ LIBRARY = I18N.dll
+-LOCAL_MCS_FLAGS = /unsafe /define:DISABLE_UNSAFE
++LOCAL_MCS_FLAGS = -unsafe -define:DISABLE_UNSAFE
+ NO_TEST = yes
+ 
+ include ../../../build/library.make
+diff -ura mono-4.8.0.orig/mcs/class/I18N/MidEast/Makefile mono-4.8.0.new/mcs/class/I18N/MidEast/Makefile
+--- mono-4.8.0.orig/mcs/class/I18N/MidEast/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/I18N/MidEast/Makefile	2017-03-03 16:11:15.609906800 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = I18N.MidEast.dll
+ LIB_REFS = I18N
+-LOCAL_MCS_FLAGS = /unsafe
++LOCAL_MCS_FLAGS = -unsafe
+ TEST_LIB_REFS = I18N
+ 
+ EXTRA_DISTFILES = $(wildcard *.ucm) \
+diff -ura mono-4.8.0.orig/mcs/class/I18N/Other/Makefile mono-4.8.0.new/mcs/class/I18N/Other/Makefile
+--- mono-4.8.0.orig/mcs/class/I18N/Other/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/I18N/Other/Makefile	2017-03-03 16:11:15.641160300 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = I18N.Other.dll
+ LIB_REFS = I18N
+-LOCAL_MCS_FLAGS = /unsafe
++LOCAL_MCS_FLAGS = -unsafe
+ NO_TEST = yes
+ 
+ EXTRA_DISTFILES = $(wildcard *.ucm)
+diff -ura mono-4.8.0.orig/mcs/class/I18N/Rare/Makefile mono-4.8.0.new/mcs/class/I18N/Rare/Makefile
+--- mono-4.8.0.orig/mcs/class/I18N/Rare/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/I18N/Rare/Makefile	2017-03-03 16:11:15.672414600 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = I18N.Rare.dll
+ LIB_REFS = I18N
+-LOCAL_MCS_FLAGS = /unsafe
++LOCAL_MCS_FLAGS = -unsafe
+ NO_TEST = yes
+ 
+ EXTRA_DISTFILES = $(wildcard *.ucm)
+diff -ura mono-4.8.0.orig/mcs/class/I18N/West/Makefile mono-4.8.0.new/mcs/class/I18N/West/Makefile
+--- mono-4.8.0.orig/mcs/class/I18N/West/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/I18N/West/Makefile	2017-03-03 16:11:15.734920200 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = I18N.West.dll
+ LIB_REFS = I18N
+-LOCAL_MCS_FLAGS = /unsafe
++LOCAL_MCS_FLAGS = -unsafe
+ #NO_TEST = yes
+ 
+ EXTRA_DISTFILES = $(wildcard *.ucm) \
+diff -ura mono-4.8.0.orig/mcs/class/IBM.Data.DB2/Makefile mono-4.8.0.new/mcs/class/IBM.Data.DB2/Makefile
+--- mono-4.8.0.orig/mcs/class/IBM.Data.DB2/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/IBM.Data.DB2/Makefile	2017-03-03 16:11:15.766172600 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = IBM.Data.DB2.dll
+ LIB_REFS = System System.Xml System.Data
+-LIB_MCS_FLAGS = /unsafe -warn:1
++LIB_MCS_FLAGS = -unsafe -warn:1
+ NO_TEST = yes
+ 
+ EXTRA_DISTFILES = ibm.pub
+diff -ura mono-4.8.0.orig/mcs/class/legacy/Mono.Cecil/Makefile mono-4.8.0.new/mcs/class/legacy/Mono.Cecil/Makefile
+--- mono-4.8.0.orig/mcs/class/legacy/Mono.Cecil/Makefile	2017-02-22 17:33:16.000000000 +0100
++++ mono-4.8.0.new/mcs/class/legacy/Mono.Cecil/Makefile	2017-03-03 16:11:15.813054600 +0100
+@@ -7,7 +7,7 @@
+ LIBRARY_SUBDIR = legacy
+ 
+ LIB_REFS = System.Core
+-LIB_MCS_FLAGS = -keyfile:$(LIBRARY_SNK) -d:NET_3_5 /publicsign
++LIB_MCS_FLAGS = -keyfile:$(LIBRARY_SNK) -d:NET_3_5 -publicsign
+ 
+ NO_TEST = yes
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Microsoft.Build.Engine/Makefile mono-4.8.0.new/mcs/class/Microsoft.Build.Engine/Makefile
+--- mono-4.8.0.orig/mcs/class/Microsoft.Build.Engine/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Microsoft.Build.Engine/Makefile	2017-03-03 16:11:15.969319600 +0100
+@@ -21,7 +21,7 @@
+ CLEAN_FILES = Test/resources/TestTasks-$(PROFILE).dll Test/resources/TestTasks-$(PROFILE).dll.mdb Test/resources/TestTasks-$(PROFILE).pdb
+ 
+ Test/resources/TestTasks-$(PROFILE).dll: Test/resources/TestTasks.cs
+-	$(CSCOMPILE) /out:$@ Test/resources/TestTasks.cs /r:$(topdir)/class/lib/$(PROFILE)/$(XBUILD_FRAMEWORK).dll /r:$(topdir)/class/lib/$(PROFILE)/$(XBUILD_UTILITIES).dll /target:library
++	$(CSCOMPILE) -out:$@ Test/resources/TestTasks.cs -r:$(topdir)/class/lib/$(PROFILE)/$(XBUILD_FRAMEWORK).dll -r:$(topdir)/class/lib/$(PROFILE)/$(XBUILD_UTILITIES).dll -target:library
+ 
+ test-local: compile-resources
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Microsoft.Build.Tasks/Makefile mono-4.8.0.new/mcs/class/Microsoft.Build.Tasks/Makefile
+--- mono-4.8.0.orig/mcs/class/Microsoft.Build.Tasks/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Microsoft.Build.Tasks/Makefile	2017-03-03 16:11:16.031827500 +0100
+@@ -27,7 +27,7 @@
+ 	Test/test-config-file*
+ 
+ Test/resources/test.dll: Test/resources/test.cs
+-	$(CSCOMPILE) -target:library /out:$@ $<
++	$(CSCOMPILE) -target:library -out:$@ $<
+ 
+ clean-test-resources:
+ 	rm -f Test/resources/test.dll
+diff -ura mono-4.8.0.orig/mcs/class/Microsoft.NuGet.Build.Tasks/Makefile mono-4.8.0.new/mcs/class/Microsoft.NuGet.Build.Tasks/Makefile
+--- mono-4.8.0.orig/mcs/class/Microsoft.NuGet.Build.Tasks/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Microsoft.NuGet.Build.Tasks/Makefile	2017-03-03 16:11:16.172467500 +0100
+@@ -12,7 +12,7 @@
+ LIBRARY_INSTALL_DIR = $(NUGET_BUILDTASKS_TARGETS_DIR)
+ 
+ KEY_FILE = $(NUGET_BUILDTASKS_REPO_DIR)/build/PublicKey.snk
+-SIGN_FLAGS = /delaysign /keyfile:$(KEY_FILE)
++SIGN_FLAGS = -delaysign -keyfile:$(KEY_FILE)
+ 
+ RESOURCE_DEFS = Microsoft.NuGet.Build.Tasks.Strings,$(NUGET_BUILDTASKS_REPO_DIR)/src/Microsoft.NuGet.Build.Tasks/Strings.resx
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Mono.Cecil/Makefile mono-4.8.0.new/mcs/class/Mono.Cecil/Makefile
+--- mono-4.8.0.orig/mcs/class/Mono.Cecil/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Mono.Cecil/Makefile	2017-03-03 16:11:16.359987600 +0100
+@@ -6,7 +6,7 @@
+ LIBRARY_PACKAGE = none
+ 
+ LIB_REFS = System.Core
+-LIB_MCS_FLAGS = -keyfile:$(LIBRARY_SNK) -d:NET_4_0 /publicsign
++LIB_MCS_FLAGS = -keyfile:$(LIBRARY_SNK) -d:NET_4_0 -publicsign
+ 
+ NO_TEST = yes
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Mono.Cecil.Mdb/Makefile mono-4.8.0.new/mcs/class/Mono.Cecil.Mdb/Makefile
+--- mono-4.8.0.orig/mcs/class/Mono.Cecil.Mdb/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Mono.Cecil.Mdb/Makefile	2017-03-03 16:11:16.391240700 +0100
+@@ -6,7 +6,7 @@
+ LIBRARY_PACKAGE = none
+ 
+ LIB_REFS = System Mono.Cecil
+-LIB_MCS_FLAGS = /d:CECIL -keyfile:$(LIBRARY_SNK) -publicsign
++LIB_MCS_FLAGS = -d:CECIL -keyfile:$(LIBRARY_SNK) -publicsign
+ 
+ NO_TEST = yes
+ NO_INSTALL = yes
+diff -ura mono-4.8.0.orig/mcs/class/Mono.Data.Sqlite/Makefile mono-4.8.0.new/mcs/class/Mono.Data.Sqlite/Makefile
+--- mono-4.8.0.orig/mcs/class/Mono.Data.Sqlite/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Mono.Data.Sqlite/Makefile	2017-03-03 16:11:16.516256000 +0100
+@@ -11,10 +11,10 @@
+ 
+ LIBRARY = Mono.Data.Sqlite.dll
+ LIB_REFS = System System.Data System.Transactions System.Xml
+-LIB_MCS_FLAGS = /unsafe \
++LIB_MCS_FLAGS = -unsafe \
+ 	$(RESOURCES:%=-resource:%) -d:SQLITE_STANDARD
+ 
+-TEST_MCS_FLAGS = $(LIB_MCS_FLAGS) /nowarn:618
++TEST_MCS_FLAGS = $(LIB_MCS_FLAGS) -nowarn:618
+ 
+ EXTRA_DISTFILES = Test/SqliteTest.cs \
+ 	Test/test.sql \
+diff -ura mono-4.8.0.orig/mcs/class/Mono.Debugger.Soft/Makefile mono-4.8.0.new/mcs/class/Mono.Debugger.Soft/Makefile
+--- mono-4.8.0.orig/mcs/class/Mono.Debugger.Soft/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Mono.Debugger.Soft/Makefile	2017-03-03 16:11:16.610013200 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY_SNK = ../mono.snk
+ 
+ LIB_REFS = System Mono.Cecil System.Core
+-LIB_MCS_FLAGS = /unsafe -D:MONO_DATACONVERTER_STATIC_METHODS -keyfile:$(LIBRARY_SNK) /publicsign
++LIB_MCS_FLAGS = -unsafe -D:MONO_DATACONVERTER_STATIC_METHODS -keyfile:$(LIBRARY_SNK) -publicsign
+ 
+ TEST_MCS_FLAGS =
+ TEST_LIB_REFS = Mono.Cecil System System.Core
+@@ -24,7 +24,7 @@
+ 	$(CSCOMPILE) -r:$(topdir)/class/lib/$(PROFILE)/System.Core.dll -r:$(topdir)/class/lib/$(PROFILE)/System.dll -out:$@ -unsafe $(PLATFORM_DEBUG_FLAGS) -optimize- Test/dtest-app.cs $(TEST_HELPERS_SOURCES)
+ 
+ dtest-excfilter.exe: Test/dtest-excfilter.il
+-	MONO_PATH=$(topdir)/class/lib/$(PROFILE) $(INTERNAL_ILASM) -out:$@ /exe /debug Test/dtest-excfilter.il
++	MONO_PATH=$(topdir)/class/lib/$(PROFILE) $(INTERNAL_ILASM) -out:$@ -exe -debug Test/dtest-excfilter.il
+ 
+ else
+ 
+diff -ura mono-4.8.0.orig/mcs/class/Mono.Posix/Makefile mono-4.8.0.new/mcs/class/Mono.Posix/Makefile
+--- mono-4.8.0.orig/mcs/class/Mono.Posix/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Mono.Posix/Makefile	2017-03-03 16:11:16.875667800 +0100
+@@ -6,8 +6,8 @@
+ # Don't warn about [Obsolete] members, as there are now *lots* of [Obsolete]
+ # members, generating volumes of output.
+ LIB_REFS = System
+-LIB_MCS_FLAGS = /unsafe /nowarn:0618,612
+-TEST_MCS_FLAGS = /unsafe /nowarn:0219,0618
++LIB_MCS_FLAGS = -unsafe -nowarn:0618,612
++TEST_MCS_FLAGS = -unsafe -nowarn:0219,0618
+ TEST_LIB_REFS = Mono.Posix System
+ 
+ LIBRARY_COMPILE = $(BOOT_COMPILE)
+diff -ura mono-4.8.0.orig/mcs/class/Mono.Security.Win32/Makefile mono-4.8.0.new/mcs/class/Mono.Security.Win32/Makefile
+--- mono-4.8.0.orig/mcs/class/Mono.Security.Win32/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Mono.Security.Win32/Makefile	2017-03-03 16:11:16.938174100 +0100
+@@ -3,7 +3,7 @@
+ include ../../build/rules.make
+ 
+ LIBRARY = Mono.Security.Win32.dll
+-LIB_MCS_FLAGS = /unsafe
++LIB_MCS_FLAGS = -unsafe
+ EXTRA_DISTFILES = README
+ 
+ ifneq (win32, $(PROFILE))
+diff -ura mono-4.8.0.orig/mcs/class/Mono.Simd/Makefile mono-4.8.0.new/mcs/class/Mono.Simd/Makefile
+--- mono-4.8.0.orig/mcs/class/Mono.Simd/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/Mono.Simd/Makefile	2017-03-03 16:11:16.969427600 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = Mono.Simd.dll
+ LIB_REFS = System.Core
+-LIB_MCS_FLAGS = /unsafe
++LIB_MCS_FLAGS = -unsafe
+ 
+ NO_TEST = yes
+ 
+diff -ura mono-4.8.0.orig/mcs/class/monodoc/Makefile mono-4.8.0.new/mcs/class/monodoc/Makefile
+--- mono-4.8.0.orig/mcs/class/monodoc/Makefile	2017-02-22 17:33:16.000000000 +0100
++++ mono-4.8.0.new/mcs/class/monodoc/Makefile	2017-03-03 16:11:17.219454400 +0100
+@@ -6,7 +6,7 @@
+ LIBRARY_PACKAGE = monodoc
+ # Remove a bunch of "obsolete"-type warning for Lucene.NET
+ # also activate legacy mode to compile old monodoc.dll api
+-LOCAL_MCS_FLAGS = /nowarn:618,612,672,809 /define:LEGACY_MODE
++LOCAL_MCS_FLAGS = -nowarn:618,612,672,809 -define:LEGACY_MODE
+ 
+ JAY_FLAGS = -ct
+ 
+@@ -141,7 +141,7 @@
+ 	$(topdir)/$(thisdir)/jay.sh $(topdir) $< $@ $(JAY_FLAGS)
+ 
+ parser.exe: Monodoc.Ecma/EcmaUrlParser.cs Monodoc.Ecma/EcmaUrlTokenizer.cs Monodoc.Ecma/EcmaUrlParserDriver.cs Monodoc.Ecma/EcmaDesc.cs
+-	mcs /out:$@ /debug $^
++	mcs -out:$@ -debug $^
+ 
+ setup-doc-sources: $(DOC_SOURCES)
+ 	mkdir -p ./Test/monodoc_test/sources/
+diff -ura mono-4.8.0.orig/mcs/class/RabbitMQ.Client/docs/specs/Makefile mono-4.8.0.new/mcs/class/RabbitMQ.Client/docs/specs/Makefile
+--- mono-4.8.0.orig/mcs/class/RabbitMQ.Client/docs/specs/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/RabbitMQ.Client/docs/specs/Makefile	2017-03-03 16:11:17.313214300 +0100
+@@ -5,13 +5,13 @@
+ all-local: $(PROFILE)-api-0-9.cs $(PROFILE)-api-0-8.cs $(PROFILE)-api-qpid-0-8.cs
+ 
+ $(PROFILE)-api-0-9.cs: amqp0-9.stripped.xml
+-	MONO_PATH="$(topdir)/class/lib/$(PROFILE)$(PLATFORM_PATH_SEPARATOR)$$MONO_PATH" $(RUNTIME) $(RUNTIME_FLAGS) $(topdir)/class/lib/$(PROFILE)/RabbitMQ.Client.Apigen.exe /n:v0_9 "/apiName:AMQP_0_9" $^ $@
++	MONO_PATH="$(topdir)/class/lib/$(PROFILE)$(PLATFORM_PATH_SEPARATOR)$$MONO_PATH" $(RUNTIME) $(RUNTIME_FLAGS) $(topdir)/class/lib/$(PROFILE)/RabbitMQ.Client.Apigen.exe -n:v0_9 "-apiName:AMQP_0_9" $^ $@
+ 
+ $(PROFILE)-api-0-8.cs: amqp0-8.stripped.xml
+-	MONO_PATH="$(topdir)/class/lib/$(PROFILE)$(PLATFORM_PATH_SEPARATOR)$$MONO_PATH" $(RUNTIME) $(RUNTIME_FLAGS) $(topdir)/class/lib/$(PROFILE)/RabbitMQ.Client.Apigen.exe /n:v0_8 "/apiName:AMQP_0_8" $^ $@
++	MONO_PATH="$(topdir)/class/lib/$(PROFILE)$(PLATFORM_PATH_SEPARATOR)$$MONO_PATH" $(RUNTIME) $(RUNTIME_FLAGS) $(topdir)/class/lib/$(PROFILE)/RabbitMQ.Client.Apigen.exe -n:v0_8 "-apiName:AMQP_0_8" $^ $@
+ 
+ $(PROFILE)-api-qpid-0-8.cs: qpid-amqp.0-8.stripped.xml
+-	MONO_PATH="$(topdir)/class/lib/$(PROFILE)$(PLATFORM_PATH_SEPARATOR)$$MONO_PATH" $(RUNTIME) $(RUNTIME_FLAGS) $(topdir)/class/lib/$(PROFILE)/RabbitMQ.Client.Apigen.exe /n:v0_8qpid "/apiName:AMQP_0_8_QPID" $^ $@
++	MONO_PATH="$(topdir)/class/lib/$(PROFILE)$(PLATFORM_PATH_SEPARATOR)$$MONO_PATH" $(RUNTIME) $(RUNTIME_FLAGS) $(topdir)/class/lib/$(PROFILE)/RabbitMQ.Client.Apigen.exe -n:v0_8qpid "-apiName:AMQP_0_8_QPID" $^ $@
+ 
+ install-local:
+ 
+diff -ura mono-4.8.0.orig/mcs/class/RabbitMQ.Client/src/apigen/Makefile mono-4.8.0.new/mcs/class/RabbitMQ.Client/src/apigen/Makefile
+--- mono-4.8.0.orig/mcs/class/RabbitMQ.Client/src/apigen/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/RabbitMQ.Client/src/apigen/Makefile	2017-03-03 16:11:17.375721000 +0100
+@@ -5,6 +5,6 @@
+ 
+ PROGRAM = RabbitMQ.Client.Apigen.exe
+ LIB_REFS = System System.Xml
+-LOCAL_MCS_FLAGS = /main:RabbitMQ.Client.Apigen.Apigen
++LOCAL_MCS_FLAGS = -main:RabbitMQ.Client.Apigen.Apigen
+ 
+ include ../../../../build/executable.make
+diff -ura mono-4.8.0.orig/mcs/class/System.Data.Linq/Makefile mono-4.8.0.new/mcs/class/System.Data.Linq/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Data.Linq/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Data.Linq/Makefile	2017-03-03 16:11:18.219560900 +0100
+@@ -5,8 +5,8 @@
+ LIBRARY = System.Data.Linq.dll
+ LIB_REFS = System System.Core System.Xml System.Data System.Runtime.Serialization
+ LIB_MCS_FLAGS = \
+-	        /resource:./src/DbLinq/Schema/Dbml/DbmlSchema.xsd,DbLinq.Schema.Dbml.DbmlSchema.xsd \
+-		/d:MONO_STRICT /d:MONO_DEPLOY -warn:1
++	        -resource:./src/DbLinq/Schema/Dbml/DbmlSchema.xsd,DbLinq.Schema.Dbml.DbmlSchema.xsd \
++		/d:MONO_STRICT -d:MONO_DEPLOY -warn:1
+ 
+ TEST_MCS_FLAGS = $(LIB_MCS_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Data.OracleClient/Makefile mono-4.8.0.new/mcs/class/System.Data.OracleClient/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Data.OracleClient/Makefile	2017-02-22 17:33:14.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Data.OracleClient/Makefile	2017-03-03 16:11:18.250822400 +0100
+@@ -6,7 +6,7 @@
+ LIB_REFS = System System.Xml System.Data System.EnterpriseServices System.Drawing
+ LIB_MCS_FLAGS =
+ 
+-TEST_MCS_FLAGS = $(LIB_MCS_FLAGS) /nowarn:618
++TEST_MCS_FLAGS = $(LIB_MCS_FLAGS) -nowarn:618
+ 
+ EXTRA_DISTFILES = Test/*.cs
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Drawing/Makefile mono-4.8.0.new/mcs/class/System.Drawing/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Drawing/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Drawing/Makefile	2017-03-03 16:11:18.453961900 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = System.Drawing.dll
+ 
+ LIB_REFS = System
+-LIB_MCS_FLAGS = /unsafe -d:FEATURE_TYPECONVERTER \
++LIB_MCS_FLAGS = -unsafe -d:FEATURE_TYPECONVERTER \
+ 	-resource:Assembly/Mono.ico,Mono.ico -resource:Assembly/Information.ico,Information.ico \
+ 	-resource:Assembly/Error.ico,Error.ico -resource:Assembly/Warning.ico,Warning.ico \
+ 	-resource:Assembly/Question.ico,Question.ico -resource:Assembly/Shield.ico,Shield.ico
+diff -ura mono-4.8.0.orig/mcs/class/System.EnterpriseServices/Makefile mono-4.8.0.new/mcs/class/System.EnterpriseServices/Makefile
+--- mono-4.8.0.orig/mcs/class/System.EnterpriseServices/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.EnterpriseServices/Makefile	2017-03-03 16:11:18.532095900 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = System.EnterpriseServices.dll
+ LIB_REFS = System.Transactions
+-LIB_MCS_FLAGS = /nowarn:0168 /nowarn:0162
++LIB_MCS_FLAGS = -nowarn:0168 -nowarn:0162
+ NO_TEST = yes
+ 
+ include ../../build/library.make
+diff -ura mono-4.8.0.orig/mcs/class/System.IdentityModel.Selectors/Makefile mono-4.8.0.new/mcs/class/System.IdentityModel.Selectors/Makefile
+--- mono-4.8.0.orig/mcs/class/System.IdentityModel.Selectors/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.IdentityModel.Selectors/Makefile	2017-03-03 16:11:18.610230400 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = System.IdentityModel.Selectors.dll
+ LIB_REFS = System System.Xml System.Security System.Runtime.Serialization System.IdentityModel
+-LIB_MCS_FLAGS = /d:NET_3_0
++LIB_MCS_FLAGS = -d:NET_3_0
+ 
+ TEST_MCS_FLAGS = $(LIB_MCS_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.IO.Compression/Makefile mono-4.8.0.new/mcs/class/System.IO.Compression/Makefile
+--- mono-4.8.0.orig/mcs/class/System.IO.Compression/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.IO.Compression/Makefile	2017-03-03 16:11:18.641481600 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = System.IO.Compression.dll
+ LIB_REFS = System System.Core
+-LIB_MCS_FLAGS = /unsafe
++LIB_MCS_FLAGS = -unsafe
+ TEST_MCS_FLAGS =
+ TEST_LIB_REFS = System System.Core
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Json.Microsoft/Makefile mono-4.8.0.new/mcs/class/System.Json.Microsoft/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Json.Microsoft/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Json.Microsoft/Makefile	2017-03-03 16:11:18.703988300 +0100
+@@ -6,7 +6,7 @@
+ 
+ LIBRARY = System.Json.Microsoft.dll
+ LIB_REFS = System System.Xml System.Core System.Runtime.Serialization
+-LIB_MCS_FLAGS = /d:ASPNETMVC -keyfile:../winfx.pub -delaysign 
++LIB_MCS_FLAGS = -d:ASPNETMVC -keyfile:../winfx.pub -delaysign 
+ EXTRA_DISTFILES = System.Json/Properties/Resources.resx
+ 
+ ifeq (4, $(FRAMEWORK_VERSION_MAJOR))
+diff -ura mono-4.8.0.orig/mcs/class/System.Messaging/Makefile mono-4.8.0.new/mcs/class/System.Messaging/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Messaging/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Messaging/Makefile	2017-03-03 16:11:18.766496900 +0100
+@@ -9,7 +9,7 @@
+ LIB_REFS += System.Drawing
+ endif
+ 
+-LIB_MCS_FLAGS = /resource:System.Messaging/MessageQueue.resx
++LIB_MCS_FLAGS = -resource:System.Messaging/MessageQueue.resx
+ TEST_MCS_FLAGS = $(LIB_MCS_FLAGS) -nowarn:0618 -nowarn:219 -nowarn:169
+ TEST_LIB_REFS = nunit.mocks
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Numerics/Makefile mono-4.8.0.new/mcs/class/System.Numerics/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Numerics/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Numerics/Makefile	2017-03-03 16:11:18.922762000 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = System.Numerics.dll
+ LIB_REFS = System
+-LIB_MCS_FLAGS = /unsafe -nowarn:414
++LIB_MCS_FLAGS = -unsafe -nowarn:414
+ TEST_MCS_FLAGS = $(LIB_MCS_FLAGS)
+ 
+ TXT_RESOURCE_STRINGS = ../referencesource/System.Numerics/System.Numerics.txt
+diff -ura mono-4.8.0.orig/mcs/class/System.Reactive.Core/Makefile mono-4.8.0.new/mcs/class/System.Reactive.Core/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Reactive.Core/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Reactive.Core/Makefile	2017-03-03 16:11:18.985309500 +0100
+@@ -8,7 +8,7 @@
+ 		@more_build_args
+ 
+ ifeq (true, $(GENERATE_RESOURCES))
+-LIB_MCS_FLAGS += /define:GENERATING_RESOURCES
++LIB_MCS_FLAGS += -define:GENERATING_RESOURCES
+ endif
+ 
+ RESX_RESOURCES = \
+diff -ura mono-4.8.0.orig/mcs/class/System.Reactive.Linq/Makefile mono-4.8.0.new/mcs/class/System.Reactive.Linq/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Reactive.Linq/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Reactive.Linq/Makefile	2017-03-03 16:11:19.172788800 +0100
+@@ -8,7 +8,7 @@
+ 		@more_build_args
+ 
+ ifeq (true, $(GENERATE_RESOURCES))
+-LIB_MCS_FLAGS += /define:GENERATING_RESOURCES
++LIB_MCS_FLAGS += -define:GENERATING_RESOURCES
+ endif
+ 
+ RESX_RESOURCES = \
+diff -ura mono-4.8.0.orig/mcs/class/System.Reactive.Observable.Aliases/Makefile mono-4.8.0.new/mcs/class/System.Reactive.Observable.Aliases/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Reactive.Observable.Aliases/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Reactive.Observable.Aliases/Makefile	2017-03-03 16:11:19.204041900 +0100
+@@ -8,7 +8,7 @@
+ 		@more_build_args
+ 
+ ifeq (true, $(GENERATE_RESOURCES))
+-LIB_MCS_FLAGS += /define:GENERATING_RESOURCES
++LIB_MCS_FLAGS += -define:GENERATING_RESOURCES
+ endif
+ 
+ CLEAN_FILES += $(RESX_RESOURCES)
+diff -ura mono-4.8.0.orig/mcs/class/System.Reactive.PlatformServices/Makefile mono-4.8.0.new/mcs/class/System.Reactive.PlatformServices/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Reactive.PlatformServices/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Reactive.PlatformServices/Makefile	2017-03-03 16:11:19.235295500 +0100
+@@ -8,7 +8,7 @@
+ 		@more_build_args
+ 
+ ifeq (true, $(GENERATE_RESOURCES))
+-LIB_MCS_FLAGS += /define:GENERATING_RESOURCES
++LIB_MCS_FLAGS += -define:GENERATING_RESOURCES
+ endif
+ 
+ RESX_RESOURCES = \
+diff -ura mono-4.8.0.orig/mcs/class/System.Reactive.Providers/Makefile mono-4.8.0.new/mcs/class/System.Reactive.Providers/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Reactive.Providers/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Reactive.Providers/Makefile	2017-03-03 16:11:19.297802900 +0100
+@@ -8,7 +8,7 @@
+ 		@more_build_args
+ 
+ ifeq (true, $(GENERATE_RESOURCES))
+-LIB_MCS_FLAGS += /define:GENERATING_RESOURCES
++LIB_MCS_FLAGS += -define:GENERATING_RESOURCES
+ endif
+ 
+ RESX_RESOURCES = \
+diff -ura mono-4.8.0.orig/mcs/class/System.Reactive.Windows.Threading/Makefile mono-4.8.0.new/mcs/class/System.Reactive.Windows.Threading/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Reactive.Windows.Threading/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Reactive.Windows.Threading/Makefile	2017-03-03 16:11:19.407189000 +0100
+@@ -8,7 +8,7 @@
+ 		@more_build_args
+ 
+ ifeq (true, $(GENERATE_RESOURCES))
+-LIB_MCS_FLAGS += /define:GENERATING_RESOURCES
++LIB_MCS_FLAGS += -define:GENERATING_RESOURCES
+ endif
+ 
+ RESX_RESOURCES = \
+diff -ura mono-4.8.0.orig/mcs/class/System.Runtime.Serialization/Makefile mono-4.8.0.new/mcs/class/System.Runtime.Serialization/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Runtime.Serialization/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Runtime.Serialization/Makefile	2017-03-03 16:11:19.704098600 +0100
+@@ -15,13 +15,13 @@
+ 
+ ifneq (2.1, $(FRAMEWORK_VERSION))
+ LIB_REFS += System.Data System.Configuration SMDiagnostics
+-LIB_MCS_FLAGS += /d:NET_3_0
++LIB_MCS_FLAGS += -d:NET_3_0
+ else
+-LIB_MCS_FLAGS += /d:NO_CONFIGURATION /d:NO_SECURITY_ATTRIBUTES /d:NO_CODEDOM /d:NO_DESKTOP_SECURITY
++LIB_MCS_FLAGS += -d:NO_CONFIGURATION -d:NO_SECURITY_ATTRIBUTES -d:NO_CODEDOM -d:NO_DESKTOP_SECURITY
+ endif
+ 
+ ifdef XAMMAC_4_5
+-LIB_MCS_FLAGS += /d:NO_CONFIGURATION
++LIB_MCS_FLAGS += -d:NO_CONFIGURATION
+ endif
+ 
+ TEST_RESOURCE_FILES = \
+diff -ura mono-4.8.0.orig/mcs/class/System.ServiceModel/Makefile mono-4.8.0.new/mcs/class/System.ServiceModel/Makefile
+--- mono-4.8.0.orig/mcs/class/System.ServiceModel/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.ServiceModel/Makefile	2017-03-03 16:11:19.875989500 +0100
+@@ -21,7 +21,7 @@
+ 
+ ifneq (2.1, $(FRAMEWORK_VERSION))
+ LIB_REFS += System.Configuration System.Data System.Security System.IdentityModel.Selectors System.Transactions System.Messaging System.Web.Services Mono.Security
+-LIB_MCS_FLAGS += /d:NET_3_0
++LIB_MCS_FLAGS += -d:NET_3_0
+ 
+ ifndef NO_SYSTEM_WEB_DEPENDENCY
+ LIB_REFS += System.Web
+diff -ura mono-4.8.0.orig/mcs/class/System.ServiceModel.Internals/Makefile mono-4.8.0.new/mcs/class/System.ServiceModel.Internals/Makefile
+--- mono-4.8.0.orig/mcs/class/System.ServiceModel.Internals/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.ServiceModel.Internals/Makefile	2017-03-03 16:11:19.969748600 +0100
+@@ -11,7 +11,7 @@
+ ifneq (2.1, $(FRAMEWORK_VERSION))
+ 	LIB_REFS += System.Configuration
+ endif
+-LIB_MCS_FLAGS = /unsafe $(REFERENCE_SOURCES_FLAGS)
++LIB_MCS_FLAGS = -unsafe $(REFERENCE_SOURCES_FLAGS)
+ 
+ TEST_MCS_FLAGS = $(LIB_MCS_FLAGS)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.ServiceProcess/Makefile mono-4.8.0.new/mcs/class/System.ServiceProcess/Makefile
+--- mono-4.8.0.orig/mcs/class/System.ServiceProcess/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.ServiceProcess/Makefile	2017-03-03 16:11:20.063511500 +0100
+@@ -4,7 +4,7 @@
+ 
+ LIBRARY = System.ServiceProcess.dll
+ LIB_REFS = System System.Configuration.Install System.Windows.Forms
+-LIB_MCS_FLAGS = /nowarn:0618
++LIB_MCS_FLAGS = -nowarn:0618
+ TEST_MCS_FLAGS = $(LIB_MCS_FLAGS)
+ 
+ EXTRA_DISTFILES =
+diff -ura mono-4.8.0.orig/mcs/class/System.Transactions/Makefile mono-4.8.0.new/mcs/class/System.Transactions/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Transactions/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Transactions/Makefile	2017-03-03 16:11:20.126015500 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = System.Transactions.dll
+ ifdef MOBILE_PROFILE
+ LIB_REFS = System
+-LIB_MCS_FLAGS = /define:MOBILE
++LIB_MCS_FLAGS = -define:MOBILE
+ else
+ LIB_REFS = System System.Configuration
+ LIB_MCS_FLAGS =
+diff -ura mono-4.8.0.orig/mcs/class/System.Web/Makefile mono-4.8.0.new/mcs/class/System.Web/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Web/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Web/Makefile	2017-03-03 16:11:20.188522600 +0100
+@@ -374,20 +374,20 @@
+ 
+ run-aaa: test
+ 	$(TEST_RUNTIME) $(TEST_HARNESS) $(TEST_HARNESS_FLAGS) $(LOCAL_TEST_HARNESS_FLAGS) \
+-	/output:TestResult-$(PROFILE).log /include:aaa /xml:TestResult-$(PROFILE).xml $(test_assemblies) || ok=false; \
+-	(echo ''; cat TestResult-$(PROFILE).log) | sed '1,/^Tests run: /d'; \
++	/output:TestResult-$(PROFILE).log -include:aaa -xml:TestResult-$(PROFILE).xml $(test_assemblies) || ok=false; \
++	(echo ''; cat TestResult-$(PROFILE).log) | sed '1,/^Tests run: -d'; \
+ 	$$ok
+ 
+ run-nunitweb: test
+ 	$(TEST_RUNTIME) $(TEST_HARNESS) $(TEST_HARNESS_FLAGS) $(LOCAL_TEST_HARNESS_FLAGS) \
+-	/output:TestResult-$(PROFILE).log /include:NunitWeb /xml:TestResult-$(PROFILE).xml $(test_assemblies) || ok=false; \
+-	(echo ''; cat TestResult-$(PROFILE).log) | sed '1,/^Tests run: /d'; \
++	/output:TestResult-$(PROFILE).log -include:NunitWeb -xml:TestResult-$(PROFILE).xml $(test_assemblies) || ok=false; \
++	(echo ''; cat TestResult-$(PROFILE).log) | sed '1,/^Tests run: -d'; \
+ 	$$ok
+ 
+ run-nunitweb-ondotnet: test
+ 	$(TEST_HARNESS) $(TEST_HARNESS_FLAGS) $(LOCAL_TEST_HARNESS_FLAGS) \
+-	/output:TestResult-ondotnet-$(PROFILE).log /include:NunitWeb /xml:TestResult-ondotnet-$(PROFILE).xml $(test_assemblies) || ok=false; \
+-	(echo ''; cat TestResult-ondotnet-$(PROFILE).log) | sed '1,/^Tests run: /d'; \
++	/output:TestResult-ondotnet-$(PROFILE).log -include:NunitWeb -xml:TestResult-ondotnet-$(PROFILE).xml $(test_assemblies) || ok=false; \
++	(echo ''; cat TestResult-ondotnet-$(PROFILE).log) | sed '1,/^Tests run: -d'; \
+ 	$$ok
+ 
+ run-standalone-test: $(STANDALONE_TEST_MAKEFRAG) $(STANDALONE_RUNNER_SUPPORT_MAKEFRAG) $(STANDALONE_TEST_ASSEMBLY)
+diff -ura mono-4.8.0.orig/mcs/class/System.Web/Test/standalone/response/Makefile mono-4.8.0.new/mcs/class/System.Web/Test/standalone/response/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Web/Test/standalone/response/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Web/Test/standalone/response/Makefile	2017-03-03 16:39:26.127593400 +0100
+@@ -12,7 +12,7 @@
+ 	mcs ctest.cs
+ 
+ copy:
+-	for i in $(TESTS) $(TESTS2); do cp $$i /q/web; done
++	for i in $(TESTS) $(TESTS2); do cp $$i -q/web; done
+ 
+ test: local compare
+ 
+@@ -26,22 +26,22 @@
+ local:
+ 	@for i in $(TESTS); do \
+ 		echo running test $$i; \
+-		mono rtest.exe localhost 8080 /$$i > $$i.result; \
+-		mono ctest.exe localhost 8080 /$$i > $$i.oresult; \
++		mono rtest.exe localhost 8080 -$$i > $$i.result; \
++		mono ctest.exe localhost 8080 -$$i > $$i.oresult; \
+ 	done
+ 	@for i in $(TESTS2); do \
+ 		echo running test $$i; \
+-		mono rtest.exe -header Cache-Control: localhost 8080 /$$i > $$i.result; \
++		mono rtest.exe -header Cache-Control: localhost 8080 -$$i > $$i.result; \
+ 	done
+ 
+ tw:
+ 	@for i in $(TESTS); do \
+ 		echo running test $$i; \
+-		mono rtest.exe $(SERVER) 80 /test/$$i > $$i.expected; \
+-		mono ctest.exe $(SERVER) 80 /test/$$i > $$i.oexpected; \
++		mono rtest.exe $(SERVER) 80 -test-$$i > $$i.expected; \
++		mono ctest.exe $(SERVER) 80 -test-$$i > $$i.oexpected; \
+ 	done
+ 	@for i in $(TESTS2); do \
+ 		echo running test $$i; \
+-		mono rtest.exe -header Cache-Control: $(SERVER) 80 /test/$$i > $$i.expected; \
++		mono rtest.exe -header Cache-Control: $(SERVER) 80 -test-$$i > $$i.expected; \
+ 	done
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Web/Test/TestMonoWeb/Makefile mono-4.8.0.new/mcs/class/System.Web/Test/TestMonoWeb/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Web/Test/TestMonoWeb/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Web/Test/TestMonoWeb/Makefile	2017-03-03 16:11:21.141752400 +0100
+@@ -2,9 +2,9 @@
+ SUBDIRS = 
+ include ../../../../build/rules.make
+ 
+-LOCAL_MCS_FLAGS = /nowarn:0168 /nowarn:0162 /unsafe \
+- /r:System.dll /r:System.Web.dll \
+- /r:System.Drawing.dll /r:System.Xml.dll
++LOCAL_MCS_FLAGS = -nowarn:0168 -nowarn:0162 -unsafe \
++ -r:System.dll -r:System.Web.dll \
++ -r:System.Drawing.dll -r:System.Xml.dll
+ 
+ all-local install-local uninstall-local doc-update-local csproj-local:
+ 
+@@ -35,4 +35,4 @@
+ # The thingie
+ 
+ TestMonoWeb.exe: $(sources)
+-	$(CSCOMPILE) /target:exe /out:$@ $(sources)
++	$(CSCOMPILE) -target:exe -out:$@ $(sources)
+diff -ura mono-4.8.0.orig/mcs/class/System.Web.Razor/Makefile mono-4.8.0.new/mcs/class/System.Web.Razor/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Web.Razor/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Web.Razor/Makefile	2017-03-03 16:11:21.673057200 +0100
+@@ -13,7 +13,7 @@
+ LIB_MCS_FLAGS = \
+ 		/warn:1 \
+ 		/keyfile:../winfx.pub -delaysign \
+-	        /d:ASPNETWEBPAGES 
++	        -d:ASPNETWEBPAGES 
+ 
+ include ../../build/library.make
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Web.WebPages/Makefile mono-4.8.0.new/mcs/class/System.Web.WebPages/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Web.WebPages/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Web.WebPages/Makefile	2017-03-03 16:11:21.829323800 +0100
+@@ -15,7 +15,7 @@
+ 		/warn:1 \
+ 		/keyfile:../winfx.pub \
+ 		/delaysign \
+-	        /d:ASPNETWEBPAGES 
++	        -d:ASPNETWEBPAGES 
+ 
+ EXTRA_DISTFILES = $(RESX_DIST)
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Web.WebPages.Deployment/Makefile mono-4.8.0.new/mcs/class/System.Web.WebPages.Deployment/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Web.WebPages.Deployment/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Web.WebPages.Deployment/Makefile	2017-03-03 16:11:21.860577400 +0100
+@@ -14,6 +14,6 @@
+ LIB_MCS_FLAGS = \
+ 		/warn:1 \
+ 		/keyfile:../winfx.pub -delaysign \
+-	        /d:ASPNETWEBPAGES 
++	        -d:ASPNETWEBPAGES 
+ 
+ include ../../build/library.make
+diff -ura mono-4.8.0.orig/mcs/class/System.Web.WebPages.Razor/Makefile mono-4.8.0.new/mcs/class/System.Web.WebPages.Razor/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Web.WebPages.Razor/Makefile	2017-02-22 17:33:15.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Web.WebPages.Razor/Makefile	2017-03-03 16:11:21.891830100 +0100
+@@ -14,7 +14,7 @@
+ 		/warn:1 \
+ 		/keyfile:../winfx.pub \
+ 		/delaysign \
+-	        /d:ASPNETWEBPAGES
++	        -d:ASPNETWEBPAGES
+ 
+ include ../../build/library.make
+ 
+diff -ura mono-4.8.0.orig/mcs/class/System.Windows.Forms/Makefile mono-4.8.0.new/mcs/class/System.Windows.Forms/Makefile
+--- mono-4.8.0.orig/mcs/class/System.Windows.Forms/Makefile	2017-02-22 17:33:16.000000000 +0100
++++ mono-4.8.0.new/mcs/class/System.Windows.Forms/Makefile	2017-03-03 16:11:22.001217000 +0100
+@@ -4,12 +4,12 @@
+ LIBRARY = System.Windows.Forms.dll
+ 
+ LIB_REFS = System System.Xml System.Drawing Accessibility System.Data Mono.Posix Mono.WebBrowser System.Configuration System.Runtime.Serialization.Formatters.Soap
+-LIB_MCS_FLAGS = /unsafe \
++LIB_MCS_FLAGS = -unsafe \
+ 	@System.Windows.Forms.dll.resources \
+ 	-nowarn:618,612,809
+ 
+ ifeq (true, $(GENERATE_RESOURCES))
+-LIB_MCS_FLAGS += /define:GENERATING_RESOURCES
++LIB_MCS_FLAGS += -define:GENERATING_RESOURCES
+ endif
+ 
+ RESX_RESOURCES = \
+@@ -106,7 +106,7 @@
+ 	-nowarn:618,612
+ 
+ DummyAssembly.dll:
+-	$(CSCOMPILE) /target:library /out:$@ Test/DummyAssembly/AnotherSerializable.cs Test/DummyAssembly/Convertable.cs Test/DummyAssembly/Properties/AssemblyInfo.cs \
++	$(CSCOMPILE) -target:library -out:$@ Test/DummyAssembly/AnotherSerializable.cs Test/DummyAssembly/Convertable.cs Test/DummyAssembly/Properties/AssemblyInfo.cs \
+ 	-r:$(topdir)/class/lib/$(PROFILE)/System.dll
+ 
+ test-local: DummyAssembly.dll
+diff -ura mono-4.8.0.orig/mcs/errors/Makefile mono-4.8.0.new/mcs/errors/Makefile
+--- mono-4.8.0.orig/mcs/errors/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/errors/Makefile	2017-03-03 16:11:22.470018200 +0100
+@@ -84,49 +84,49 @@
+ csproj-local install-local uninstall-local:
+ 
+ CS0029-26-lib.dll : CS0029-26-lib.cs
+-	$(CSCOMPILE) /target:library /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -publicsign -out:$@ $<
+ 
+ CS0266-25-lib.dll: CS0266-25-lib.cs
+-	$(CSCOMPILE) /target:library /r:$(topdir)/class/lib/$(PROFILE)/System.Core.dll /out:$@ $<
++	$(CSCOMPILE) -target:library -r:$(topdir)/class/lib/$(PROFILE)/System.Core.dll -out:$@ $<
+ 
+ dlls/first/CS1701-lib.dll: dlls/first/CS1701-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ dlls/first/CS1702-lib.dll: dlls/first/CS1702-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ dlls/first/CS1703-lib.dll: dlls/first/CS1703-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ dlls/first/CS1705-lib.dll: dlls/first/CS1705-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ dlls/second/CS1701-lib.dll: dlls/second/CS1701-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ dlls/second/CS1702-lib.dll: dlls/second/CS1702-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ dlls/second/CS1703-lib.dll: dlls/second/CS1703-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ dlls/second/CS1705-lib.dll: dlls/second/CS1705-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /publicsign /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -publicsign -out:$@ $<
+ 
+ CS1701-lib.dll : CS1701-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /r:dlls/first/CS1701-lib.dll /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -r:dlls/first/CS1701-lib.dll -out:$@ $<
+ 
+ CS1702-lib.dll : CS1702-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /r:dlls/first/CS1702-lib.dll /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -r:dlls/first/CS1702-lib.dll -out:$@ $<
+ 
+ CS1705-lib.dll : CS1705-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /r:dlls/first/CS1705-lib.dll /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -r:dlls/first/CS1705-lib.dll -out:$@ $<
+ 
+ %-lib.dll: %-lib.cs
+-	$(CSCOMPILE) /target:library /warn:0 /out:$@ $<
++	$(CSCOMPILE) -target:library -warn:0 -out:$@ $<
+ 
+ %-module.dll: %-module.cs
+-	$(CSCOMPILE) /target:module /out:$@ $<
++	$(CSCOMPILE) -target:module -out:$@ $<
+ 
+ %-lib.dll: %-lib.il
+-	$(ILASM) /dll /out:$@ $<
++	$(ILASM) -dll -out:$@ $<
+diff -ura mono-4.8.0.orig/mcs/ilasm/Makefile mono-4.8.0.new/mcs/ilasm/Makefile
+--- mono-4.8.0.orig/mcs/ilasm/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/ilasm/Makefile	2017-03-03 16:11:22.501271300 +0100
+@@ -4,7 +4,7 @@
+ 
+ PROGRAM = ilasm.exe
+ BUILT_SOURCES = ILParser.cs
+-LOCAL_MCS_FLAGS = /lib:../class/lib/$(PROFILE) /r:../class/lib/$(PROFILE)/PEAPI.dll /r:Mono.CompilerServices.SymbolWriter.dll /r:Mono.Security.dll
++LOCAL_MCS_FLAGS = -lib:../class/lib/$(PROFILE) -r:../class/lib/$(PROFILE)/PEAPI.dll -r:Mono.CompilerServices.SymbolWriter.dll -r:Mono.Security.dll
+ 
+ CLEAN_FILES = parser/y.output
+ 
+diff -ura mono-4.8.0.orig/mcs/mcs/Makefile mono-4.8.0.new/mcs/mcs/Makefile
+--- mono-4.8.0.orig/mcs/mcs/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/mcs/Makefile	2017-03-03 16:32:45.473042200 +0100
+@@ -96,7 +96,7 @@
+ PROFILER=default
+ 
+ do-gettext:
+-	xgettext --keyword='Report.Error:3' --keyword='Report.Error:2' --keyword='Report.Warning:3' --keyword='Report.Warning:2' -o mcs.po --language='C#' `cat gmcs.exe.sources | grep -v /`
++	xgettext --keyword='Report.Error:3' --keyword='Report.Error:2' --keyword='Report.Warning:3' --keyword='Report.Warning:2' -o mcs.po --language='C#' `cat gmcs.exe.sources | grep -v -`
+ 
+ profile : $(PROGRAM)
+ 	$(RUNTIME) $(RUNTIME_FLAGS) --profile=$(PROFILER) $(PROGRAM) $(USE_MCS_FLAGS) -target:exe -out:mcs2.exe $(BUILT_SOURCES) @$(response)
+diff -ura mono-4.8.0.orig/mcs/nunit24/ClientUtilities/util/Makefile mono-4.8.0.new/mcs/nunit24/ClientUtilities/util/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/ClientUtilities/util/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/ClientUtilities/util/Makefile	2017-03-03 16:11:22.720074400 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = nunit.util.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LOCAL_MCS_FLAGS= /resource:Transform.resources,NUnit.Util.Transform.resources /d:MONO /d:StronglyNamedAssembly /publicsign -warn:1
++LOCAL_MCS_FLAGS= -resource:Transform.resources,NUnit.Util.Transform.resources -d:MONO -d:StronglyNamedAssembly -publicsign -warn:1
+ LIB_REFS = nunit.core nunit.core.interfaces System System.Xml System.Runtime.Remoting
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/nunit24/ConsoleRunner/nunit-console/Makefile mono-4.8.0.new/mcs/nunit24/ConsoleRunner/nunit-console/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/ConsoleRunner/nunit-console/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/ConsoleRunner/nunit-console/Makefile	2017-03-03 16:11:22.751297800 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = nunit-console-runner.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LOCAL_MCS_FLAGS= /d:MONO /d:StronglyNamedAssembly /publicsign
++LOCAL_MCS_FLAGS= -d:MONO -d:StronglyNamedAssembly -publicsign
+ LIB_REFS = nunit.core nunit.core.interfaces nunit.util System System.Xml
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/nunit24/NUnitCore/core/Makefile mono-4.8.0.new/mcs/nunit24/NUnitCore/core/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/NUnitCore/core/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/NUnitCore/core/Makefile	2017-03-03 16:11:22.954444100 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = nunit.core.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LOCAL_MCS_FLAGS = /d:StronglyNamedAssembly -warn:1 /publicsign
++LOCAL_MCS_FLAGS = -d:StronglyNamedAssembly -warn:1 -publicsign
+ LIB_REFS = nunit.framework nunit.core.interfaces System
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/nunit24/NUnitCore/interfaces/Makefile mono-4.8.0.new/mcs/nunit24/NUnitCore/interfaces/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/NUnitCore/interfaces/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/NUnitCore/interfaces/Makefile	2017-03-03 16:11:22.985698400 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = nunit.core.interfaces.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LOCAL_MCS_FLAGS= /d:StronglyNamedAssembly /publicsign
++LOCAL_MCS_FLAGS= -d:StronglyNamedAssembly -publicsign
+ LIB_REFS = nunit.framework System
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/nunit24/NUnitExtensions/core/Makefile mono-4.8.0.new/mcs/nunit24/NUnitExtensions/core/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/NUnitExtensions/core/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/NUnitExtensions/core/Makefile	2017-03-03 16:11:23.016950800 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = nunit.core.extensions.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LIB_MCS_FLAGS =  /d:StronglyNamedAssembly /publicsign
++LIB_MCS_FLAGS =  -d:StronglyNamedAssembly -publicsign
+ LIB_REFS = nunit.core nunit.core.interfaces System.Xml System
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/nunit24/NUnitExtensions/framework/Makefile mono-4.8.0.new/mcs/nunit24/NUnitExtensions/framework/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/NUnitExtensions/framework/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/NUnitExtensions/framework/Makefile	2017-03-03 16:11:23.079494100 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = nunit.framework.extensions.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LIB_MCS_FLAGS = /d:StronglyNamedAssembly /publicsign
++LIB_MCS_FLAGS = -d:StronglyNamedAssembly -publicsign
+ LIB_REFS = System.Xml System
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/nunit24/NUnitFramework/framework/Makefile mono-4.8.0.new/mcs/nunit24/NUnitFramework/framework/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/NUnitFramework/framework/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/NUnitFramework/framework/Makefile	2017-03-03 16:11:23.095090100 +0100
+@@ -6,7 +6,7 @@
+ LIBRARY_NAME = nunit.framework.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LIB_MCS_FLAGS = /d:StronglyNamedAssembly -warn:1 /publicsign
++LIB_MCS_FLAGS = -d:StronglyNamedAssembly -warn:1 -publicsign
+ LIB_REFS = System.Xml System
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/nunit24/NUnitMocks/mocks/Makefile mono-4.8.0.new/mcs/nunit24/NUnitMocks/mocks/Makefile
+--- mono-4.8.0.orig/mcs/nunit24/NUnitMocks/mocks/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/nunit24/NUnitMocks/mocks/Makefile	2017-03-03 16:11:23.126338000 +0100
+@@ -5,7 +5,7 @@
+ LIBRARY = nunit.mocks.dll
+ LIBRARY_SNK = $(topdir)/nunit24/nunit.snk
+ 
+-LOCAL_MCS_FLAGS= /d:StronglyNamedAssembly /publicsign
++LOCAL_MCS_FLAGS= -d:StronglyNamedAssembly -publicsign
+ LIB_REFS = nunit.framework System
+ NO_TEST = yo
+ 
+diff -ura mono-4.8.0.orig/mcs/tests/Makefile mono-4.8.0.new/mcs/tests/Makefile
+--- mono-4.8.0.orig/mcs/tests/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/tests/Makefile	2017-03-03 16:11:23.454497300 +0100
+@@ -25,16 +25,16 @@
+ ifdef VALID_PROFILE
+ # casts
+ bootstrap-cast.exe: gen-cast-test.cs
+-	$(BOOT_COMPILE) -target:exe /out:$@ $<
++	$(BOOT_COMPILE) -target:exe -out:$@ $<
+ 
+ casts.cs: bootstrap-cast.exe
+ 	$(with_mono_path) $(RUNTIME) $(RUNTIME_FLAGS) $< >$@
+ 
+ casts-mcs.exe: casts.cs
+-	$(CSCOMPILE) -target:exe /out:$@ $<
++	$(CSCOMPILE) -target:exe -out:$@ $<
+ 
+ casts-boot.exe: casts.cs
+-	$(BOOT_COMPILE) -target:exe /out:$@ $<
++	$(BOOT_COMPILE) -target:exe -out:$@ $<
+ 
+ boot-casts.out: casts-boot.exe
+ 	$(with_mono_path) $(RUNTIME) $(RUNTIME_FLAGS) $< >$@
+@@ -90,10 +90,10 @@
+ csproj-local:
+ 
+ %-il.dll: %-il.il
+-	$(ILASM) /dll $<
++	$(ILASM) -dll $<
+ 
+ %-lib.dll: %-lib.il
+-	$(ILASM) /dll /out:$@ $<
++	$(ILASM) -dll -out:$@ $<
+ 
+ setup:
+ 	$(CSCOMPILE) -t:library dlls/test-679-2/test-679-lib-2.cs
+diff -ura mono-4.8.0.orig/mcs/tools/mdoc/Makefile mono-4.8.0.new/mcs/tools/mdoc/Makefile
+--- mono-4.8.0.orig/mcs/tools/mdoc/Makefile	2017-02-22 17:33:17.000000000 +0100
++++ mono-4.8.0.new/mcs/tools/mdoc/Makefile	2017-03-03 16:11:24.829645100 +0100
+@@ -90,7 +90,7 @@
+ 	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-addNonGeneric.cs
+ 
+ Test/DocTest-addNonGeneric-v2.dll:
+-	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-addNonGeneric.cs /define:V2
++	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-addNonGeneric.cs -define:V2
+ 
+ Test/DocTest-DropNS-classic-secondary.dll:
+ 	@echo $(value @)
+@@ -105,27 +105,27 @@
+ 
+ Test/DocTest-DropNS-unified-multitest.dll:
+ 	rm -f $@
+-	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-unified.cs /define:MULTITEST
++	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-unified.cs -define:MULTITEST
+ 
+ Test/DocTest-DropNS-classic-multitest.dll:
+ 	rm -f $@
+-	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-classic.cs /define:MULTITEST
++	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-classic.cs -define:MULTITEST
+ 
+ Test/DocTest-DropNS-unified-deletetest.dll:
+ 	rm -f Test/DocTest-DropNS-unified-deletetest.dll
+-	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-unified.cs /define:DELETETEST
++	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-unified.cs -define:DELETETEST
+ 
+ Test/DocTest-DropNS-unified-deletetest-V2.dll:
+ 	rm -f Test/DocTest-DropNS-unified-deletetest.dll
+-	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:Test/DocTest-DropNS-unified-deletetest.dll Test/DocTest-DropNS-unified.cs /define:DELETETEST,V2
++	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:Test/DocTest-DropNS-unified-deletetest.dll Test/DocTest-DropNS-unified.cs -define:DELETETEST,V2
+ 
+ Test/DocTest-DropNS-classic-deletetest.dll:
+ 	rm -f Test/DocTest-DropNS-classic-deletetest.dll
+-	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-classic.cs /define:DELETETEST
++	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest-DropNS-classic.cs -define:DELETETEST
+ 
+ Test/DocTest-DropNS-classic-deletetest-V2.dll:
+ 	rm -f Test/DocTest-DropNS-classic-deletetest.dll
+-	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:Test/DocTest-DropNS-classic-deletetest.dll Test/DocTest-DropNS-classic.cs /define:DELETETEST,V2
++	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:Test/DocTest-DropNS-classic-deletetest.dll Test/DocTest-DropNS-classic.cs -define:DELETETEST,V2
+ 
+ Test/DocTest.dll: 
+ 	$(CSCOMPILE) $(TEST_CSCFLAGS) -unsafe -target:library -out:$@ Test/DocTest.cs -r:$(topdir)/class/lib/$(PROFILE)/System.Core.dll -r:$(topdir)/class/lib/$(PROFILE)/Microsoft.CSharp.dll
+diff -ura mono-4.8.0.orig/mcs/tools/mono-service/Makefile mono-4.8.0.new/mcs/tools/mono-service/Makefile
+--- mono-4.8.0.orig/mcs/tools/mono-service/Makefile	2017-02-22 17:33:18.000000000 +0100
++++ mono-4.8.0.new/mcs/tools/mono-service/Makefile	2017-03-03 16:11:25.423460100 +0100
+@@ -24,7 +24,7 @@
+ endif
+ 
+ ifndef RUNTIME_HAS_CONSISTENT_GACDIR
+-gacdir_flag = /gacdir $(GACDIR)
++gacdir_flag = -gacdir $(GACDIR)
+ endif
+ 
+ # -- end --
+@@ -33,7 +33,7 @@
+ uninstall-local: uninstall-extras
+ 
+ install-extras: $(gacutil)
+-	$(GACUTIL) /i $(the_lib) /f $(gacdir_flag) /root $(GACROOT)
++	$(GACUTIL) -i $(the_lib) -f $(gacdir_flag) -root $(GACROOT)
+ 
+ uninstall-extras: $(gacutil)
+-	-$(GACUTIL) /u $(the_lib:.exe=) $(gacdir_flag) /root $(GACROOT)
++	-$(GACUTIL) -u $(the_lib:.exe=) $(gacdir_flag) -root $(GACROOT)
+diff -ura mono-4.8.0.orig/mcs/tools/security/certview/Makefile mono-4.8.0.new/mcs/tools/security/certview/Makefile
+--- mono-4.8.0.orig/mcs/tools/security/certview/Makefile	2017-02-22 17:33:18.000000000 +0100
++++ mono-4.8.0.new/mcs/tools/security/certview/Makefile	2017-03-03 16:11:25.829751600 +0100
+@@ -4,7 +4,7 @@
+ 
+ RESGEN = resgen
+ LIB_REFS = Mono.Security System.Xml
+-LOCAL_MCS_FLAGS = /win32icon:mono.ico
++LOCAL_MCS_FLAGS = -win32icon:mono.ico
+ 
+ # SWF isn't quite good enough to build this yet.
+ 
+@@ -37,7 +37,7 @@
+ dist-local: dist-default
+ 
+ sources = CertificateViewer.cs CertificateFormatter.cs X509ExtensionsHandler.cs ../AssemblyInfo.cs ../../../build/common/Consts.cs
+-cv_libs = /r:System.Windows.Forms.dll /r:System.Drawing.dll
++cv_libs = -r:System.Windows.Forms.dll -r:System.Drawing.dll
+ gcv_libs = -pkg:gtk-sharp -pkg:glade-sharp
+ 
+ certview.exe: $(sources) Mono.Tools.CertView.CertificateViewer.resources
+diff -ura mono-4.8.0.orig/mcs/tools/security/Makefile mono-4.8.0.new/mcs/tools/security/Makefile
+--- mono-4.8.0.orig/mcs/tools/security/Makefile	2017-02-22 17:33:18.000000000 +0100
++++ mono-4.8.0.new/mcs/tools/security/Makefile	2017-03-03 16:11:25.892260600 +0100
+@@ -59,7 +59,7 @@
+ dist-local: dist-default
+ 
+ sn.exe $(topdir)/class/lib/$(PROFILE)/sn.exe: $(SN_SOURCES)
+-	$(CSCOMPILE) -r:$(topdir)/class/lib/$(PROFILE)/Mono.Security.dll /out:$@ $(SN_SOURCES)
++	$(CSCOMPILE) -r:$(topdir)/class/lib/$(PROFILE)/Mono.Security.dll -out:$@ $(SN_SOURCES)
+ 
+ permview.exe: permview.cs
+ 	$(CSCOMPILE) $^ $(HELPER_SOURCES) -r:$(topdir)/class/lib/$(PROFILE)/Mono.Cecil.dll
