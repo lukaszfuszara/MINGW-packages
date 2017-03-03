@@ -16,9 +16,9 @@ depends=("${MINGW_PACKAGE_PREFIX}-zlib"
          "${MINGW_PACKAGE_PREFIX}-gcc-libs" 
          "${MINGW_PACKAGE_PREFIX}-libiconv")
 source=(http://download.mono-project.com/sources/mono/${_realname}-${pkgver}.tar.bz2
-        monopatch)
-sha256sums=('7ba62e6f42559d58dc447a19fc1cb2a9c7977d6c6e21e1e335f73917dea120cb
-            569fb0c066d8b09036704fad235930ba534d8fd3727febc92e88d8094aa57627')
+        https://raw.githubusercontent.com/lukaszfuszara/MINGW-packages/master/mingw-w64-mono/mono-4.8.0-msys2.patch)
+sha256sums=('7ba62e6f42559d58dc447a19fc1cb2a9c7977d6c6e21e1e335f73917dea120cb'
+            '4f24792a79a96da5c26d23257f5ecff84fe04ddcb39ed09cc8552ef8a0e2f96c')
 
 prepare() {
  local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
