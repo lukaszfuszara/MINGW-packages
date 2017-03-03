@@ -37,10 +37,8 @@ build() {
     --prefix=${MINGW_PREFIX} \
     --target=${MINGW_CHOST} \
     --host=${MINGW_CHOST} \
-    --enable-parallel-mark \
-    --program-transform-name="" \
     --disable-boehm \
-    --with-moonlight=no
+    --enable-nls=no
   
   make get-monolite-latest
   
