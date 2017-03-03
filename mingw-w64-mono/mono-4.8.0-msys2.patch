@@ -1,6 +1,5 @@
-diff -ura mono-4.8.0.orig/mcs/build/config-default.make mono-4.8.0.new/mcs/build/config-default.make
---- mono-4.8.0.orig/mcs/build/config-default.make	2017-02-22 17:33:14.000000000 +0100
-+++ mono-4.8.0.new/mcs/build/config-default.make	2017-03-03 16:25:13.424567200 +0100
+--- a/mcs/build/config-default.make	2017-02-22 17:33:14.000000000 +0100
++++ b/mcs/build/config-default.make	2017-03-03 16:25:13.424567200 +0100
 @@ -13,7 +13,7 @@
  TEST_HARNESS = $(topdir)/class/lib/$(PROFILE)/$(PARENT_PROFILE)nunit-console.exe
  MCS_FLAGS = 
