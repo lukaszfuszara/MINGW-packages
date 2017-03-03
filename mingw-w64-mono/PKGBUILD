@@ -24,7 +24,6 @@ prepare() {
  local PREFIX_WIN=$(cygpath -wm ${MINGW_PREFIX})
 
  cd "${srcdir}/${_realname}-${_pkgver}"
- cp ./mcs/build/platforms/linux.make ./mcs/build/platforms/win32.make
  patch -Np1 -i "${srcdir}/mono-4.8.0-msys2.patch"
 }
 
